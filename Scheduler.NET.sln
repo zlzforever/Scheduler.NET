@@ -3,7 +3,7 @@ Microsoft Visual Studio Solution File, Format Version 12.00
 # Visual Studio 15
 VisualStudioVersion = 15.0.26730.16
 MinimumVisualStudioVersion = 10.0.40219.1
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Scheduler.NET.Scheduler", "src\Scheduler.NET.Scheduler\Scheduler.NET.Scheduler.csproj", "{10189F28-E4B9-4648-B2B2-E613041A377C}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Scheduler.NET.Portal", "src\Scheduler.NET.Scheduler\Scheduler.NET.Portal.csproj", "{10189F28-E4B9-4648-B2B2-E613041A377C}"
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Scheduler.NET.Core", "src\Scheduler.NET.Core\Scheduler.NET.Core.csproj", "{61F8D02C-BEFC-4B20-AE33-C5A5DE9BF9B8}"
 EndProject
