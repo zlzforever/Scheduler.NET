@@ -7,6 +7,7 @@ using System.Text;
 
 namespace DotnetSpider.Enterprise.Core.Utils
 {
+
 	public class HttpUtil
 	{
 		private static HttpUtil _instance = null;
@@ -38,5 +39,25 @@ namespace DotnetSpider.Enterprise.Core.Utils
 			return rent;
 		}
 
+		public static S RequestUrl<T, S>(string url, HttpMethod method, T postData)
+			where T : class
+			where S : class
+		{
+			var rent = default(S);
+			var restp = new RestProperties
+			{
+				Url = url,
+				Method = method,
+				PostData = JsonConvert.SerializeObject(postData)
+			};
+
+			var restc = new RestConnection(restp);
+			var rentStr = restc.SendToApi();
+			if (!string.IsNullOrEmpty(rentStr))
+			{
+				rent = JsonConvert.DeserializeObject<S>(rentStr);
+			}
+			return rent;
+		}
 	}
 }
