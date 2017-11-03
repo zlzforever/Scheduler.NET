@@ -6,7 +6,7 @@ using System.Text;
 
 namespace Scheduler.NET.Core.Scheduler
 {
-	[DataContract()]
+	[DataContract(Name = "job")]
 	public class SpiderJob
 	{
 		[DataMember(Name = "taskId")]
@@ -14,6 +14,9 @@ namespace Scheduler.NET.Core.Scheduler
 
 		[DataMember(Name = "cron")]
 		public String Cron { get; set; }
+
+		[DataMember(Name = "posttime")]
+		public DateTime PostTime { get; set; }
 	}
 
 }

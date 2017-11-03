@@ -8,6 +8,7 @@ using Scheduler.NET.Core.Scheduler;
 using DotnetSpider.Enterprise.Core.Scheduler;
 using DotnetSpider.Enterprise.Core.Caching;
 using Scheduler.NET.Core.Utils;
+using Scheduler.NET.Core.Domain;
 
 namespace Scheduler.NET.Scheduler.Controllers
 {
@@ -22,13 +23,6 @@ namespace Scheduler.NET.Scheduler.Controllers
 		{
 			String[] arrays = id.Split("|");
 			SpiderJob _job = new SpiderJob() { TaskId = arrays[0], Cron = arrays[1] };
-			HangFireJobManager.EnqueueHFJob(_job);
-
-			HangFireJobManager.AddHFJob(_job.TaskId,_job);
-
-			StackRedisUtil.Set("_S01", "SSS_002");
-			var rent = StackRedisUtil.Get("_S01");
-
 			return "value";
 		}
 
@@ -38,9 +32,21 @@ namespace Scheduler.NET.Scheduler.Controllers
 		/// <param name="value"></param>
 		// POST: api/Task
 		[HttpPost]
-		public void Add([FromBody]string value)
+		public void Add([FromBody]SpiderJob value)
 		{
-
+			try
+			{
+				if (value != null)
+				{
+					HangFireJobManager.AddHFJob(value);
+				}
+			}
+			catch (Exception ex)
+			{
+				//invoke
+				return;
+			}
+			//failed invoke
 		}
 
 		/// <summary>
@@ -52,6 +58,7 @@ namespace Scheduler.NET.Scheduler.Controllers
 		[HttpPut("{id}")]
 		public void Modify(int id, [FromBody]string value)
 		{
+
 		}
 
 		/// <summary>

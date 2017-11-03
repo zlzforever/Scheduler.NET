@@ -40,17 +40,15 @@ namespace DotnetSpider.Enterprise.Core.Scheduler
 			return id;
 		}
 
+		/// <summary>
+		/// 添加或者修改
+		/// </summary>
+		/// <param name="job"></param>
 		public static void AddOrUpdateHFJob(SpiderJob job)
 		{
-			RecurringJob.AddOrUpdate(() => Method(job.TaskId), job.Cron);
-			//RecurringJob.AddOrUpdate(() => Console.WriteLine("1"), job.Cron);
+			RecurringJob.AddOrUpdate(job.TaskId, () => Method(job.TaskId), job.Cron);
 		}
-
-		public static void AddHFJob(String jobId, SpiderJob job)
-		{
-			RecurringJob.AddOrUpdate(jobId, () => Method(job.TaskId), job.Cron);
-		}
-
+		
 		/// <summary>
 		/// 删除计划任务
 		/// </summary>
@@ -59,9 +57,22 @@ namespace DotnetSpider.Enterprise.Core.Scheduler
 			RecurringJob.RemoveIfExists(jobId);
 		}
 
+		/// <summary>
+		/// 触发任务
+		/// </summary>
+		/// <param name="jobId"></param>
+		public void Trigger(String jobId)
+		{
+			RecurringJob.Trigger(jobId);
+		}
+
+		/// <summary>
+		/// 
+		/// </summary>
+		/// <param name="_param"></param>
 		public static void Method(String _param)
 		{
-
+			//invoke api
 		}
 	}
 }
