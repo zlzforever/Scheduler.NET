@@ -38,7 +38,7 @@ namespace Scheduler.NET.Scheduler.Controllers
 			{
 				if (value != null)
 				{
-					HangFireJobManager.AddHFJob(value);
+					HangFireJobManager.AddOrUpdateHFJob(value);
 				}
 			}
 			catch (Exception ex)
