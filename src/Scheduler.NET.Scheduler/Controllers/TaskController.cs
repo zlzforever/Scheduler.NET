@@ -4,6 +4,10 @@ using System.Linq;
 using System.Threading.Tasks;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
+using Scheduler.NET.Core.Scheduler;
+using DotnetSpider.Enterprise.Core.Scheduler;
+using DotnetSpider.Enterprise.Core.Caching;
+using Scheduler.NET.Core.Utils;
 
 namespace Scheduler.NET.Scheduler.Controllers
 {
@@ -14,8 +18,17 @@ namespace Scheduler.NET.Scheduler.Controllers
 
 		// GET: api/Task/5
 		[HttpGet("{id}", Name = "Get")]
-		public object Get(int id)
+		public object Get(String id)
 		{
+			String[] arrays = id.Split("|");
+			SpiderJob _job = new SpiderJob() { TaskId = arrays[0], Cron = arrays[1] };
+			HangFireJobManager.EnqueueHFJob(_job);
+
+			HangFireJobManager.AddHFJob(_job.TaskId,_job);
+
+			StackRedisUtil.Set("_S01", "SSS_002");
+			var rent = StackRedisUtil.Get("_S01");
+
 			return "value";
 		}
 
