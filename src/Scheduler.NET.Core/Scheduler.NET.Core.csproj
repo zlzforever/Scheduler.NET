@@ -7,21 +7,8 @@
   <ItemGroup>
     <PackageReference Include="Hang.TaskScheduler" Version="2.0.0" />
     <PackageReference Include="HangFire" Version="1.6.17" />
-    <PackageReference Include="Hangfire.MySql" Version="0.0.7" />
-    <PackageReference Include="HangFire.Redis" Version="2.0.1" />
-    <PackageReference Include="HangFire.SqlServer" Version="1.6.17" />
     <PackageReference Include="Newtonsoft.Json" Version="10.0.3" />
-    <PackageReference Include="RedLock.net" Version="1.7.5" />
-    <PackageReference Include="StackExchange.Redis" Version="1.2.6" />
-  </ItemGroup>
-
-  <ItemGroup>
-    <Reference Include="Microsoft.Extensions.Configuration">
-      <HintPath>..\..\..\..\Program Files\dotnet\sdk\NuGetFallbackFolder\microsoft.extensions.configuration\2.0.0\lib\netstandard2.0\Microsoft.Extensions.Configuration.dll</HintPath>
-    </Reference>
-    <Reference Include="Microsoft.Extensions.Configuration.Abstractions">
-      <HintPath>..\..\..\..\Program Files\dotnet\sdk\NuGetFallbackFolder\microsoft.extensions.configuration.abstractions\2.0.0\lib\netstandard2.0\Microsoft.Extensions.Configuration.Abstractions.dll</HintPath>
-    </Reference>
+    <PackageReference Include="StackExchange.Redis.StrongName" Version="1.2.6" />
   </ItemGroup>
 
 </Project>

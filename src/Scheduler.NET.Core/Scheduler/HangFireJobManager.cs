@@ -40,6 +40,13 @@ namespace DotnetSpider.Enterprise.Core.Scheduler
 			return id;
 		}
 
+		public static void QueryHFJobs()
+		{
+			JobStorage.Current.GetMonitoringApi().JobDetails("");
+			JobStorage.Current.GetMonitoringApi().ProcessingJobs(1,3);
+			JobStorage.Current.GetMonitoringApi().ScheduledCount();
+		}
+		
 		/// <summary>
 		/// 添加或者修改
 		/// </summary>

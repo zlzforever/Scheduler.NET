@@ -19,8 +19,7 @@ namespace Scheduler.NET.Portal.Controllers
 		[HttpGet("{id}", Name = "Get")]
 		public object Get(String id)
 		{
-			String[] arrays = id.Split("|");
-			SpiderJob _job = new SpiderJob() { TaskId = arrays[0], Cron = arrays[1] };
+			
 			return "value";
 		}
 
