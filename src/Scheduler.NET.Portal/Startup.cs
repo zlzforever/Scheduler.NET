@@ -19,17 +19,20 @@ namespace Scheduler.NET.Portal
 			Configuration = configuration;
 		}
 
-		public static ConnectionMultiplexer Redis;
-
 		public IConfiguration Configuration { get; }
 
 		// This method gets called by the runtime. Use this method to add services to the container.
 		public void ConfigureServices(IServiceCollection services)
 		{
 			services.AddMvc();
-			
-			services.AddHangfire(r => r.UseSqlServerStorage(SchedulerConfig.SqlServerConnectString));
-			//services.AddHangfire(config => config.UseRedisStorage(Redis));
+
+			//services.AddHangfire(r => r.UseSqlServerStorage(SchedulerConfig.SqlServerConnectString));
+
+			services.AddHangfire(x =>
+			{
+				var connectionString = Configuration.GetConnectionString("");
+				x.UseRedisStorage(connectionString);
+			});
 		}
 
 		// This method gets called by the runtime. Use this method to configure the HTTP request pipeline.
@@ -48,7 +51,7 @@ namespace Scheduler.NET.Portal
 			app.UseHangfireServer();
 			app.UseHangfireDashboard();
 			app.UseStaticFiles();
-			
+
 			app.UseMvc(routes =>
 			{
 				routes.MapRoute(
