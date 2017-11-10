@@ -8,7 +8,6 @@
     <PackageReference Include="Hang.TaskScheduler" Version="2.0.0" />
     <PackageReference Include="HangFire" Version="1.6.17" />
     <PackageReference Include="Newtonsoft.Json" Version="10.0.3" />
-    <PackageReference Include="StackExchange.Redis.StrongName" Version="1.2.6" />
   </ItemGroup>
 
   <ItemGroup>
