@@ -15,11 +15,17 @@ namespace Scheduler.NET.Portal.Controllers
 	public class TaskController : Controller
 	{
 
+		private IJobManager _JobManager { get; set; }
+
+		public TaskController(IJobManager _jobManager)
+		{
+			_JobManager = _jobManager;
+		}
+
 		// GET: api/Task/5
 		[HttpGet("{id}", Name = "Get")]
 		public object Get(String id)
 		{
-			
 			return "value";
 		}
 
@@ -35,7 +41,7 @@ namespace Scheduler.NET.Portal.Controllers
 			{
 				if (value != null)
 				{
-					HangFireJobManager.AddOrUpdateHFJob(value);
+					_JobManager.AddOrUpdateHFJob(value);
 				}
 			}
 			catch (Exception ex)

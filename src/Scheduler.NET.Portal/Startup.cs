@@ -11,12 +11,13 @@ using Hangfire;
 using Scheduler.NET.Core;
 using Microsoft.Extensions.Options;
 using System.IO;
+using DotnetSpider.Enterprise.Core.Scheduler;
+using Scheduler.NET.Core.Scheduler;
 
 namespace Scheduler.NET.Portal
 {
 	public class Startup
 	{
-
 		public Startup(IHostingEnvironment env)
 		{
 
@@ -46,6 +47,9 @@ namespace Scheduler.NET.Portal
 			services.AddMvc();
 
 			services.Configure<SchedulerConfig>(this.Configuration.GetSection("AppSettings"));
+			
+			services.AddTransient<IJobManager,HangFireJobManager >();
+			
 			_SchedulerConfig = services.BuildServiceProvider().GetService<IOptions<SchedulerConfig>>().Value;
 			if (_SchedulerConfig.SqlConfig.Enable)
 			{

@@ -7,8 +7,6 @@ namespace Scheduler.NET.Core
 {
 	public class SchedulerConfig
 	{
-		//public RedisCaching RedisCaching { get; set; }
-
 		public SqlConfig SqlConfig { get; set; }
 		public RedisConfig RedisConfig { get; set; }
 

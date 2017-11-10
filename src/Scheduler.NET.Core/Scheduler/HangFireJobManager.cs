@@ -1,4 +1,5 @@
-﻿using Hangfire;
+﻿using DotnetSpider.Enterprise.Core.Utils;
+using Hangfire;
 using Hangfire.SqlServer;
 using Scheduler.NET.Core;
 using Scheduler.NET.Core.Domain;
@@ -6,6 +7,7 @@ using Scheduler.NET.Core.Scheduler;
 using System;
 using System.Collections.Generic;
 using System.Collections.Specialized;
+using System.Net.Http;
 using System.Text;
 
 namespace DotnetSpider.Enterprise.Core.Scheduler
@@ -16,47 +18,31 @@ namespace DotnetSpider.Enterprise.Core.Scheduler
 	/// </summary>
 	public class HangFireJobManager : IJobManager
 	{
-		private SchedulerConfig _SchedulerConfig { get; set; }
-
 		public HangFireJobManager()
 		{
-			//InitHangFire();
-		}
-
-		private void InitHangFire()
-		{
-			var options = new SqlServerStorageOptions
-			{
-				PrepareSchemaIfNecessary = true
-			};
-			GlobalConfiguration.Configuration.UseSqlServerStorage(_SchedulerConfig.SqlConfig.ConnectionString, options);
 		}
 
 		/// <summary>
 		/// 添加、修改计划任务
 		/// </summary>
-		public static string EnqueueHFJob(SpiderJob job)
+		public string EnqueueHFJob(SpiderJob job)
 		{
-			var id = BackgroundJob.Enqueue(() => Method(job.TaskId));
-			return id;
+			return BackgroundJob.Enqueue(() => Method(job.CallBack, job.TaskId, job.Token, job.Cron));
 		}
 
-		public static void QueryHFJobs()
+		public void QueryHFJobs()
 		{
-			//JobStorage.Current.GetMonitoringApi().JobDetails("");
-			//JobStorage.Current.GetMonitoringApi().ProcessingJobs(1,3);
-			//JobStorage.Current.GetMonitoringApi().ScheduledCount();
 		}
-		
+
 		/// <summary>
 		/// 添加或者修改
 		/// </summary>
 		/// <param name="job"></param>
-		public static void AddOrUpdateHFJob(SpiderJob job)
+		public void AddOrUpdateHFJob(SpiderJob job)
 		{
 			RecurringJob.AddOrUpdate(job.TaskId, () => Method(job.TaskId), job.Cron);
 		}
-		
+
 		/// <summary>
 		/// 删除计划任务
 		/// </summary>
@@ -75,12 +61,13 @@ namespace DotnetSpider.Enterprise.Core.Scheduler
 		}
 
 		/// <summary>
-		/// 
+		/// call back
 		/// </summary>
 		/// <param name="_param"></param>
-		public static void Method(String _param)
+		public void Method(params String[] arguments)
 		{
-			//invoke api
+			string url = String.Format("{0}?taskId={1}&token={2}", arguments[0], arguments[1], arguments[2]);
+			HttpUtil.RequestUrl<String>(url, HttpMethod.Post);
 		}
 	}
 }
