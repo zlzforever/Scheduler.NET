@@ -22,7 +22,7 @@ namespace DotnetSpider.Enterprise.Core.Scheduler
 
 		private readonly ILogger<HangFireJobManager> _Logger;
 
-		public HangFireJobManager(ILogger<HangFireJobManager>  _logger)
+		public HangFireJobManager(ILogger<HangFireJobManager> _logger)
 		{
 			this._Logger = _logger;
 		}
@@ -32,11 +32,12 @@ namespace DotnetSpider.Enterprise.Core.Scheduler
 		/// </summary>
 		public string EnqueueHFJob(SpiderJob job)
 		{
-			return BackgroundJob.Enqueue(() => Method(job.CallBack, job.TaskId, job.Token, job.Cron));
+			return BackgroundJob.Enqueue<RecurringJobService>(x => x.ExecuteJob(job.CallBack, job.TaskId, job.Token, job.Cron));
 		}
 
 		public void QueryHFJobs()
 		{
+
 		}
 
 		/// <summary>
@@ -45,7 +46,7 @@ namespace DotnetSpider.Enterprise.Core.Scheduler
 		/// <param name="job"></param>
 		public void AddOrUpdateHFJob(SpiderJob job)
 		{
-			RecurringJob.AddOrUpdate(job.TaskId, () => Method(job.TaskId), job.Cron);
+			RecurringJob.AddOrUpdate<RecurringJobService>(job.TaskId, x => x.ExecuteJob(job.CallBack, job.TaskId, job.Token, job.Cron), job.Cron);
 		}
 
 		/// <summary>
@@ -65,21 +66,5 @@ namespace DotnetSpider.Enterprise.Core.Scheduler
 			RecurringJob.Trigger(jobId);
 		}
 
-		/// <summary>
-		/// call back
-		/// </summary>
-		/// <param name="_param"></param>
-		public void Method(params String[] arguments)
-		{
-			try
-			{
-				string url = String.Format("{0}?taskId={1}&token={2}", arguments[0], arguments[1], arguments[2]);
-				HttpUtil.RequestUrl<String>(url, HttpMethod.Post);
-			}
-			catch (Exception ex)
-			{
-				_Logger.LogWarning(ex.Message, ex.StackTrace);
-			}
-		}
 	}
 }

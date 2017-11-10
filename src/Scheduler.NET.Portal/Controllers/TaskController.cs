@@ -57,7 +57,7 @@ namespace Scheduler.NET.Portal.Controllers
 		}
 
 		/// <summary>
-		/// 
+		/// 修改
 		/// </summary>
 		/// <param name="id"></param>
 		/// <param name="value"></param>
