@@ -16,19 +16,20 @@ namespace DotnetSpider.Enterprise.Core.Scheduler
 	/// </summary>
 	public class HangFireJobManager : IJobManager
 	{
+		private SchedulerConfig _SchedulerConfig { get; set; }
 
-		static HangFireJobManager()
+		public HangFireJobManager()
 		{
 			//InitHangFire();
 		}
 
-		private static void InitHangFire()
+		private void InitHangFire()
 		{
 			var options = new SqlServerStorageOptions
 			{
 				PrepareSchemaIfNecessary = true
 			};
-			GlobalConfiguration.Configuration.UseSqlServerStorage(SchedulerConfig.SqlServerConnectString, options);
+			GlobalConfiguration.Configuration.UseSqlServerStorage(_SchedulerConfig.SqlConfig.ConnectionString, options);
 		}
 
 		/// <summary>
@@ -42,9 +43,9 @@ namespace DotnetSpider.Enterprise.Core.Scheduler
 
 		public static void QueryHFJobs()
 		{
-			JobStorage.Current.GetMonitoringApi().JobDetails("");
-			JobStorage.Current.GetMonitoringApi().ProcessingJobs(1,3);
-			JobStorage.Current.GetMonitoringApi().ScheduledCount();
+			//JobStorage.Current.GetMonitoringApi().JobDetails("");
+			//JobStorage.Current.GetMonitoringApi().ProcessingJobs(1,3);
+			//JobStorage.Current.GetMonitoringApi().ScheduledCount();
 		}
 		
 		/// <summary>

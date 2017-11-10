@@ -1,0 +1,10 @@
+﻿{
+	"RedisCaching": {
+		"Enable": "true",
+		"ConnectionString ": "127.0.0.1:6379"
+	},
+	"SqlConfig": {
+		"Enable": "true",
+		"ConnectionString ": "Server=DESKTOP-AEQD6I9;User ID = sa; Password=111111;database=HangFire;"
+	}
+}
