@@ -6,6 +6,8 @@ using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Scheduler.NET.Core.Scheduler;
 using DotnetSpider.Enterprise.Core.Scheduler;
+using Scheduler.NET.Core.Domain;
+using Microsoft.Extensions.Logging;
 
 namespace Scheduler.NET.Portal.Controllers
 {
@@ -14,12 +16,14 @@ namespace Scheduler.NET.Portal.Controllers
 	[Route("api/Task")]
 	public class TaskController : Controller
 	{
+		private readonly ILogger<TaskController> _Logger;
 
-		private IJobManager _JobManager { get; set; }
+		private readonly IJobManager _JobManager;
 
-		public TaskController(IJobManager _jobManager)
+		public TaskController(IJobManager _jobManager, ILogger<TaskController> _logger)
 		{
 			_JobManager = _jobManager;
+			_Logger = _logger;
 		}
 
 		// GET: api/Task/5
@@ -35,7 +39,7 @@ namespace Scheduler.NET.Portal.Controllers
 		/// <param name="value"></param>
 		// POST: api/Task
 		[HttpPost]
-		public void Add([FromBody]SpiderJob value)
+		public Message Add([FromBody]SpiderJob value)
 		{
 			try
 			{
@@ -43,13 +47,13 @@ namespace Scheduler.NET.Portal.Controllers
 				{
 					_JobManager.AddOrUpdateHFJob(value);
 				}
+				return Messager.GetOKMessage("succeed.");
 			}
 			catch (Exception ex)
 			{
-				//invoke
-				return;
+				_Logger.LogWarning(ex.Message);
+				return Messager.GetFailMessage("filed.");
 			}
-			//failed invoke
 		}
 
 		/// <summary>

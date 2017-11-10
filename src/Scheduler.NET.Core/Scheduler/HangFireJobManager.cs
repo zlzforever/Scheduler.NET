@@ -1,6 +1,7 @@
 ﻿using DotnetSpider.Enterprise.Core.Utils;
 using Hangfire;
 using Hangfire.SqlServer;
+using Microsoft.Extensions.Logging;
 using Scheduler.NET.Core;
 using Scheduler.NET.Core.Domain;
 using Scheduler.NET.Core.Scheduler;
@@ -18,8 +19,12 @@ namespace DotnetSpider.Enterprise.Core.Scheduler
 	/// </summary>
 	public class HangFireJobManager : IJobManager
 	{
-		public HangFireJobManager()
+
+		private readonly ILogger<HangFireJobManager> _Logger;
+
+		public HangFireJobManager(ILogger<HangFireJobManager>  _logger)
 		{
+			this._Logger = _logger;
 		}
 
 		/// <summary>
@@ -66,8 +71,15 @@ namespace DotnetSpider.Enterprise.Core.Scheduler
 		/// <param name="_param"></param>
 		public void Method(params String[] arguments)
 		{
-			string url = String.Format("{0}?taskId={1}&token={2}", arguments[0], arguments[1], arguments[2]);
-			HttpUtil.RequestUrl<String>(url, HttpMethod.Post);
+			try
+			{
+				string url = String.Format("{0}?taskId={1}&token={2}", arguments[0], arguments[1], arguments[2]);
+				HttpUtil.RequestUrl<String>(url, HttpMethod.Post);
+			}
+			catch (Exception ex)
+			{
+				_Logger.LogWarning(ex.Message, ex.StackTrace);
+			}
 		}
 	}
 }
