@@ -59,8 +59,7 @@ namespace Scheduler.NET.Portal
 			{
 				services.AddHangfire(x =>
 				{
-					var connectionString = Configuration.GetConnectionString("");
-					x.UseRedisStorage(connectionString);
+					x.UseRedisStorage(_SchedulerConfig.RedisConfig.ConnectionString);
 				});
 			}
 		}

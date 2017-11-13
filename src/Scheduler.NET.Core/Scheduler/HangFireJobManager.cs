@@ -37,7 +37,8 @@ namespace DotnetSpider.Enterprise.Core.Scheduler
 
 		public void QueryHFJobs()
 		{
-
+			//JobStorage.Current.GetMonitoringApi().EnqueuedJobs("", 1, 1);
+			var queues = JobStorage.Current.GetMonitoringApi().Queues();
 		}
 
 		/// <summary>

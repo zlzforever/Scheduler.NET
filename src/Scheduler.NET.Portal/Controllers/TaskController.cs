@@ -8,6 +8,7 @@ using Scheduler.NET.Core.Scheduler;
 using DotnetSpider.Enterprise.Core.Scheduler;
 using Scheduler.NET.Core.Domain;
 using Microsoft.Extensions.Logging;
+using Hangfire;
 
 namespace Scheduler.NET.Portal.Controllers
 {
@@ -30,6 +31,17 @@ namespace Scheduler.NET.Portal.Controllers
 		[HttpGet("{id}", Name = "Get")]
 		public object Get(String id)
 		{
+			//_JobManager.EnqueueHFJob(null);
+			var its = JobStorage.Current.GetMonitoringApi().Queues();
+			var it1 = JobStorage.Current.GetMonitoringApi().ProcessingCount();
+			var it2 = JobStorage.Current.GetMonitoringApi().ProcessingJobs(1,100);
+			var it3 = JobStorage.Current.GetMonitoringApi().ScheduledCount();
+			var it4 = JobStorage.Current.GetMonitoringApi().ScheduledJobs(1, 100);
+			var it5 = JobStorage.Current.GetMonitoringApi().SucceededListCount();
+			var it6 = JobStorage.Current.GetMonitoringApi().SucceededJobs(1,100);
+
+			var ss1 = JobStorage.Current.GetMonitoringApi().Servers();
+			var ss2 = JobStorage.Current.GetMonitoringApi().FetchedCount("DEFAULT");
 			return "value";
 		}
 
