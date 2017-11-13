@@ -71,16 +71,15 @@ namespace Scheduler.NET.Portal.Controllers
 						_JobManager.AddOrUpdateHFJob(value);
 					}
 				}
-				
 				return Messager.GetOKMessage("succeed.");
 			}
 			catch (Exception ex)
 			{
 				_Logger.LogWarning(ex.Message);
-				return Messager.GetFailMessage("filed.");
+				return Messager.GetFailMessage("failed.");
 			}
 		}
-		
+
 		/// <summary>
 		/// 删除任务
 		/// </summary>

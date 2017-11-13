@@ -9,7 +9,7 @@ namespace Scheduler.NET.Core.Scheduler
 	[DataContract(Name = "job")]
 	public class SpiderJob
 	{
-		[DataMember(Name = "taskId")]
+		[DataMember(Name = "Id")]
 		public String TaskId { get; set; }
 
 		[DataMember(Name = "cron")]
