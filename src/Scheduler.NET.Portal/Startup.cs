@@ -18,9 +18,9 @@ namespace Scheduler.NET.Portal
 {
 	public class Startup
 	{
+
 		public Startup(IHostingEnvironment env)
 		{
-
 			var builder = new ConfigurationBuilder()
 				.SetBasePath(env.ContentRootPath)
 				.AddJsonFile("appsettings.json", optional: true, reloadOnChange: true);
@@ -47,9 +47,9 @@ namespace Scheduler.NET.Portal
 			services.AddMvc();
 
 			services.Configure<SchedulerConfig>(this.Configuration.GetSection("AppSettings"));
-			
-			services.AddTransient<IJobManager,HangFireJobManager >();
-			
+
+			services.AddTransient<IJobManager, HangFireJobManager>();
+
 			_SchedulerConfig = services.BuildServiceProvider().GetService<IOptions<SchedulerConfig>>().Value;
 			if (_SchedulerConfig.SqlConfig.Enable)
 			{

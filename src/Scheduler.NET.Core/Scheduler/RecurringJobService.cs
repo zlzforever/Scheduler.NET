@@ -38,7 +38,8 @@ namespace Scheduler.NET.Core.Scheduler
 				while (rent != HttpStatusCode.OK && _Times > 0)
 				{
 					Thread.Sleep(3000);
-					ExecuteJob(json);
+					rent = HttpUtil.PostUrl(job.CallBack, json);
+					//ExecuteJob(json);
 					_Times--;
 				}
 			}
