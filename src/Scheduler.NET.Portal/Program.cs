@@ -14,7 +14,7 @@ namespace Scheduler.NET.Portal
 {
 	public class Program
 	{
-		static string Url = File.ReadAllLines("domain.ini")[0];
+		static string Url = File.ReadAllLines(Path.Combine(AppContext.BaseDirectory, "domain.ini"))[0];
 
 		public static void Main(string[] args)
 		{
