@@ -13,6 +13,7 @@ using Microsoft.Extensions.Options;
 using System.IO;
 using DotnetSpider.Enterprise.Core.Scheduler;
 using Scheduler.NET.Core.Scheduler;
+using Scheduler.NET.Portal.Filter;
 
 namespace Scheduler.NET.Portal
 {
@@ -22,12 +23,17 @@ namespace Scheduler.NET.Portal
 		public Startup(IHostingEnvironment env)
 		{
 			var builder = new ConfigurationBuilder()
-				.SetBasePath(env.ContentRootPath)
-				.AddJsonFile("appsettings.json", optional: true, reloadOnChange: true);
+				.SetBasePath(env.ContentRootPath);
+
 
 			if (env.IsDevelopment())
 			{
+				builder.AddJsonFile("appsettings.Development.json", optional: true, reloadOnChange: true);
 				builder.AddUserSecrets<Startup>();
+			}
+			else
+			{
+				builder.AddJsonFile("appsettings.json", optional: true, reloadOnChange: true);
 			}
 			builder.AddEnvironmentVariables();
 			Configuration = builder.Build();
@@ -76,9 +82,13 @@ namespace Scheduler.NET.Portal
 			{
 				app.UseExceptionHandler("/Home/Error");
 			}
-
+			
 			app.UseHangfireServer();
-			app.UseHangfireDashboard();
+			app.UseHangfireDashboard("/hangfire", new DashboardOptions()
+			{
+				Authorization = new[] { new CustomAuthorizeFilter() }
+			});
+
 
 			app.UseStaticFiles();
 
