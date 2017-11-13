@@ -15,11 +15,11 @@ namespace Scheduler.NET.Core.Scheduler
 		[DataMember(Name = "cron")]
 		public String Cron { get; set; }
 
-		[DataMember(Name = "callback")]
-		public String CallBack { get; set; }
+		[DataMember(Name = "url")]
+		public String Url { get; set; }
 
-		[DataMember(Name = "token")]
-		public String Token { get; set; }
+		[DataMember(Name = "data")]
+		public String Data { get; set; }
 
 		[DataMember(Name = "posttime")]
 		public DateTime PostTime { get; set; }

@@ -34,12 +34,11 @@ namespace Scheduler.NET.Core.Scheduler
 			try
 			{
 				SpiderJob job = JsonConvert.DeserializeObject<SpiderJob>(json);
-				var rent = HttpUtil.PostUrl(job.CallBack, json);
+				var rent = HttpUtil.PostUrl(job.Url, json);
 				while (rent != HttpStatusCode.OK && _Times > 0)
 				{
 					Thread.Sleep(3000);
-					rent = HttpUtil.PostUrl(job.CallBack, json);
-					//ExecuteJob(json);
+					rent = HttpUtil.PostUrl(job.Url, json);
 					_Times--;
 				}
 			}

@@ -14,6 +14,8 @@ namespace Scheduler.NET.Portal
 {
 	public class Program
 	{
+		static string Url = File.ReadAllLines("domain.ini")[0];
+
 		public static void Main(string[] args)
 		{
 			BuildWebHost(args).Run();
@@ -21,7 +23,7 @@ namespace Scheduler.NET.Portal
 
 		public static IWebHost BuildWebHost(string[] args) =>
 			WebHost.CreateDefaultBuilder(args)
-				.UseStartup<Startup>()
+				.UseStartup<Startup>().UseUrls(Url)
 				.Build();
 	}
 }
