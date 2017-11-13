@@ -1,11 +1,15 @@
-﻿using Hangfire;
+﻿using DotnetSpider.Enterprise.Core.Utils;
+using Hangfire;
 using Hangfire.SqlServer;
+using Microsoft.Extensions.Logging;
+using Newtonsoft.Json;
 using Scheduler.NET.Core;
-using Scheduler.NET.Core.Domain;
+using Scheduler.NET.Core.Entities;
 using Scheduler.NET.Core.Scheduler;
 using System;
 using System.Collections.Generic;
 using System.Collections.Specialized;
+using System.Net.Http;
 using System.Text;
 
 namespace DotnetSpider.Enterprise.Core.Scheduler
@@ -17,45 +21,38 @@ namespace DotnetSpider.Enterprise.Core.Scheduler
 	public class HangFireJobManager : IJobManager
 	{
 
-		static HangFireJobManager()
-		{
-			//InitHangFire();
-		}
+		private readonly ILogger<HangFireJobManager> _Logger;
 
-		private static void InitHangFire()
+		public HangFireJobManager(ILogger<HangFireJobManager> _logger)
 		{
-			var options = new SqlServerStorageOptions
-			{
-				PrepareSchemaIfNecessary = true
-			};
-			GlobalConfiguration.Configuration.UseSqlServerStorage(SchedulerConfig.SqlServerConnectString, options);
+			this._Logger = _logger;
 		}
 
 		/// <summary>
 		/// 添加、修改计划任务
 		/// </summary>
-		public static string EnqueueHFJob(SpiderJob job)
+		public string EnqueueHFJob(SpiderJob job)
 		{
-			var id = BackgroundJob.Enqueue(() => Method(job.TaskId));
-			return id;
+			string json = JsonConvert.SerializeObject(job);
+			return BackgroundJob.Enqueue<RecurringJobService>(x => x.ExecuteJob(json));
 		}
 
-		public static void QueryHFJobs()
+		public void QueryHFJobs()
 		{
-			JobStorage.Current.GetMonitoringApi().JobDetails("");
-			JobStorage.Current.GetMonitoringApi().ProcessingJobs(1,3);
-			JobStorage.Current.GetMonitoringApi().ScheduledCount();
+			//JobStorage.Current.GetMonitoringApi().EnqueuedJobs("", 1, 1);
+			var queues = JobStorage.Current.GetMonitoringApi().Queues();
 		}
-		
+
 		/// <summary>
 		/// 添加或者修改
 		/// </summary>
 		/// <param name="job"></param>
-		public static void AddOrUpdateHFJob(SpiderJob job)
+		public void AddOrUpdateHFJob(SpiderJob job)
 		{
-			RecurringJob.AddOrUpdate(job.TaskId, () => Method(job.TaskId), job.Cron);
+			string json = JsonConvert.SerializeObject(job);
+			RecurringJob.AddOrUpdate<RecurringJobService>(job.TaskId, x => x.ExecuteJob(json), job.Cron);
 		}
-		
+
 		/// <summary>
 		/// 删除计划任务
 		/// </summary>
@@ -73,13 +70,5 @@ namespace DotnetSpider.Enterprise.Core.Scheduler
 			RecurringJob.Trigger(jobId);
 		}
 
-		/// <summary>
-		/// 
-		/// </summary>
-		/// <param name="_param"></param>
-		public static void Method(String _param)
-		{
-			//invoke api
-		}
 	}
 }

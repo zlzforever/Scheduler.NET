@@ -1,7 +1,9 @@
 ﻿using DotnetSpider.Enterprise.Core.Propertities;
+using Microsoft.Extensions.Logging;
 using Newtonsoft.Json;
 using System;
 using System.Collections.Generic;
+using System.Net;
 using System.Net.Http;
 using System.Text;
 
@@ -12,6 +14,7 @@ namespace DotnetSpider.Enterprise.Core.Utils
 	{
 		private static HttpUtil _instance = null;
 		private static object _lock = new object();
+		private static readonly HttpClient httpClient = new HttpClient();
 
 		public HttpUtil()
 		{
@@ -21,43 +24,46 @@ namespace DotnetSpider.Enterprise.Core.Utils
 			}
 		}
 
-		public static T RequestUrl<T>(string url, HttpMethod method) where T : class
+		public static HttpStatusCode PostUrl(string url, string json)
 		{
-			var rent = default(T);
-			var restp = new RestProperties
+			var content = new StringContent(json, Encoding.UTF8, "application/json");
+			var code = default(HttpStatusCode);
+			httpClient.PostAsync(url, content).ContinueWith((task) =>
 			{
-				Url = url,
-				Method = method,
-			};
+				try
+				{
+					HttpResponseMessage response = task.Result;
+					response.EnsureSuccessStatusCode();
+					code = response.StatusCode;
+				}
+				catch (Exception ex)
+				{
 
-			var restc = new RestConnection(restp);
-			var rentStr = restc.SendToApi();
-			if (!string.IsNullOrEmpty(rentStr))
-			{
-				rent = JsonConvert.DeserializeObject<T>(rentStr);
-			}
-			return rent;
+				}
+			});
+			return code;
 		}
 
-		public static S RequestUrl<T, S>(string url, HttpMethod method, T postData)
-			where T : class
-			where S : class
+		public static async void GetUrl(string url)
 		{
-			var rent = default(S);
-			var restp = new RestProperties
+			await httpClient.GetAsync(url).ContinueWith((task) =>
 			{
-				Url = url,
-				Method = method,
-				PostData = JsonConvert.SerializeObject(postData)
-			};
+				try
+				{
+					HttpResponseMessage response = task.Result;
+					response.EnsureSuccessStatusCode();
 
-			var restc = new RestConnection(restp);
-			var rentStr = restc.SendToApi();
-			if (!string.IsNullOrEmpty(rentStr))
-			{
-				rent = JsonConvert.DeserializeObject<S>(rentStr);
-			}
-			return rent;
+					var result = response.Content.ReadAsStringAsync().Result;
+					if (!string.IsNullOrEmpty(result))
+					{
+					}
+				}
+				catch (Exception ex)
+				{
+				}
+			});
 		}
+
+
 	}
 }

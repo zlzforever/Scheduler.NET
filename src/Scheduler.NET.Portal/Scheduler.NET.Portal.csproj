@@ -5,14 +5,8 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <Compile Remove="Data\**" />
-    <Content Remove="Data\**" />
-    <EmbeddedResource Remove="Data\**" />
-    <None Remove="Data\**" />
-  </ItemGroup>
-
-  <ItemGroup>
-    <PackageReference Include="HangFire.Redis.StackExchange" Version="1.7.0" />
+   <PackageReference Include="Hangfire.AspNetCore" Version="1.6.17" />
+   <PackageReference Include="HangFire.Redis.StackExchange" Version="1.7.0" />
     <PackageReference Include="Microsoft.AspNetCore.All" Version="2.0.0" />
     <PackageReference Include="Microsoft.VisualStudio.Web.CodeGeneration.Design" Version="2.0.0" />
     <PackageReference Include="StackExchange.Redis" Version="1.2.6" />
@@ -23,6 +17,8 @@
   </ItemGroup>
 
   <ItemGroup>
+    <Folder Include="Data\" />
+    <Folder Include="Filter\" />
     <Folder Include="Models\" />
     <Folder Include="Views\Shared\" />
     <Folder Include="wwwroot\css\" />
@@ -34,4 +30,18 @@
     <ProjectReference Include="..\Scheduler.NET.Core\Scheduler.NET.Core.csproj" />
   </ItemGroup>
 
+  <ItemGroup>
+    <Content Update="bower.json">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
+  </ItemGroup>
+
+  <ItemGroup>
+    <None Update="domain.ini">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
+  </ItemGroup>
+<PropertyGroup>
+  <UserSecretsId>aspnet-TestApp-ce345b64-19cf-4972-b34f-d16f2e7976ed</UserSecretsId>
+</PropertyGroup>
 </Project>

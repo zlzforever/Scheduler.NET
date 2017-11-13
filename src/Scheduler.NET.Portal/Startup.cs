@@ -9,30 +9,59 @@ using Microsoft.Extensions.DependencyInjection;
 using StackExchange.Redis;
 using Hangfire;
 using Scheduler.NET.Core;
+using Microsoft.Extensions.Options;
+using System.IO;
+using DotnetSpider.Enterprise.Core.Scheduler;
+using Scheduler.NET.Core.Scheduler;
 
 namespace Scheduler.NET.Portal
 {
 	public class Startup
 	{
+
+		public Startup(IHostingEnvironment env)
+		{
+			var builder = new ConfigurationBuilder()
+				.SetBasePath(env.ContentRootPath)
+				.AddJsonFile("appsettings.json", optional: true, reloadOnChange: true);
+
+			if (env.IsDevelopment())
+			{
+				builder.AddUserSecrets<Startup>();
+			}
+			builder.AddEnvironmentVariables();
+			Configuration = builder.Build();
+		}
+
+		public SchedulerConfig _SchedulerConfig { get; set; }
+		public IConfiguration Configuration { get; }
+
 		public Startup(IConfiguration configuration)
 		{
 			Configuration = configuration;
 		}
-
-		public IConfiguration Configuration { get; }
 
 		// This method gets called by the runtime. Use this method to add services to the container.
 		public void ConfigureServices(IServiceCollection services)
 		{
 			services.AddMvc();
 
-			//services.AddHangfire(r => r.UseSqlServerStorage(SchedulerConfig.SqlServerConnectString));
+			services.Configure<SchedulerConfig>(this.Configuration.GetSection("AppSettings"));
 
-			services.AddHangfire(x =>
+			services.AddTransient<IJobManager, HangFireJobManager>();
+
+			_SchedulerConfig = services.BuildServiceProvider().GetService<IOptions<SchedulerConfig>>().Value;
+			if (_SchedulerConfig.SqlConfig.Enable)
 			{
-				var connectionString = Configuration.GetConnectionString("");
-				x.UseRedisStorage(connectionString);
-			});
+				services.AddHangfire(r => r.UseSqlServerStorage(_SchedulerConfig.SqlConfig.ConnectionString));
+			}
+			else
+			{
+				services.AddHangfire(x =>
+				{
+					x.UseRedisStorage(_SchedulerConfig.RedisConfig.ConnectionString);
+				});
+			}
 		}
 
 		// This method gets called by the runtime. Use this method to configure the HTTP request pipeline.
@@ -50,6 +79,7 @@ namespace Scheduler.NET.Portal
 
 			app.UseHangfireServer();
 			app.UseHangfireDashboard();
+
 			app.UseStaticFiles();
 
 			app.UseMvc(routes =>

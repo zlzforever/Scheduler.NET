@@ -9,11 +9,17 @@ namespace Scheduler.NET.Core.Scheduler
 	[DataContract(Name = "job")]
 	public class SpiderJob
 	{
-		[DataMember(Name = "taskId")]
+		[DataMember(Name = "id")]
 		public String TaskId { get; set; }
 
 		[DataMember(Name = "cron")]
 		public String Cron { get; set; }
+
+		[DataMember(Name = "url")]
+		public String Url { get; set; }
+
+		[DataMember(Name = "data")]
+		public String Data { get; set; }
 
 		[DataMember(Name = "posttime")]
 		public DateTime PostTime { get; set; }

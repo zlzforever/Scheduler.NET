@@ -6,6 +6,12 @@ using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Scheduler.NET.Core.Scheduler;
 using DotnetSpider.Enterprise.Core.Scheduler;
+using Scheduler.NET.Core.Entities;
+using Microsoft.Extensions.Logging;
+using Hangfire;
+using DotnetSpider.Enterprise.Core.Utils;
+using System.Net.Http;
+using Newtonsoft.Json;
 
 namespace Scheduler.NET.Portal.Controllers
 {
@@ -14,12 +20,33 @@ namespace Scheduler.NET.Portal.Controllers
 	[Route("api/Task")]
 	public class TaskController : Controller
 	{
+		private readonly ILogger<TaskController> _Logger;
+
+		private readonly IJobManager _JobManager;
+
+		public TaskController(IJobManager _jobManager, ILogger<TaskController> _logger)
+		{
+			_JobManager = _jobManager;
+			_Logger = _logger;
+		}
 
 		// GET: api/Task/5
 		[HttpGet("{id}", Name = "Get")]
 		public object Get(String id)
 		{
-			
+			//var user = new User() { Name = "ssss" };
+			//HttpUtil.PostUrl("http://localhost:54106/api/values?id=1123", JsonConvert.SerializeObject(user));
+			//_JobManager.EnqueueHFJob(null);
+			//var its = JobStorage.Current.GetMonitoringApi().Queues();
+			//var it1 = JobStorage.Current.GetMonitoringApi().ProcessingCount();
+			//var it2 = JobStorage.Current.GetMonitoringApi().ProcessingJobs(1,100);
+			//var it3 = JobStorage.Current.GetMonitoringApi().ScheduledCount();
+			//var it4 = JobStorage.Current.GetMonitoringApi().ScheduledJobs(1, 100);
+			//var it5 = JobStorage.Current.GetMonitoringApi().SucceededListCount();
+			//var it6 = JobStorage.Current.GetMonitoringApi().SucceededJobs(1,100);
+
+			//var ss1 = JobStorage.Current.GetMonitoringApi().Servers();
+			//var ss2 = JobStorage.Current.GetMonitoringApi().FetchedCount("DEFAULT");
 			return "value";
 		}
 
@@ -29,33 +56,28 @@ namespace Scheduler.NET.Portal.Controllers
 		/// <param name="value"></param>
 		// POST: api/Task
 		[HttpPost]
-		public void Add([FromBody]SpiderJob value)
+		public Message Add([FromBody]SpiderJob value)
 		{
 			try
 			{
 				if (value != null)
 				{
-					HangFireJobManager.AddOrUpdateHFJob(value);
+					if (string.IsNullOrEmpty(value.Cron))
+					{
+						_JobManager.RemoveHFJob(value.TaskId);
+					}
+					else
+					{
+						_JobManager.AddOrUpdateHFJob(value);
+					}
 				}
+				return Messager.GetOKMessage("succeed.");
 			}
 			catch (Exception ex)
 			{
-				//invoke
-				return;
+				_Logger.LogWarning(ex.Message);
+				return Messager.GetFailMessage("failed.");
 			}
-			//failed invoke
-		}
-
-		/// <summary>
-		/// 
-		/// </summary>
-		/// <param name="id"></param>
-		/// <param name="value"></param>
-		// PUT: api/Task/5
-		[HttpPut("{id}")]
-		public void Modify(int id, [FromBody]string value)
-		{
-
 		}
 
 		/// <summary>
@@ -68,5 +90,10 @@ namespace Scheduler.NET.Portal.Controllers
 		{
 
 		}
+	}
+
+	public class User
+	{
+		public string Name { get; set; }
 	}
 }
