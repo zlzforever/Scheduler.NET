@@ -12,6 +12,7 @@ namespace Scheduler.NET.Core.Scheduler
 		[DataMember(Name = "taskId")]
 		public String TaskId { get; set; }
 
+		[DataMember(Name = "cron")]
 		public String Cron { get; set; }
 
 		[DataMember(Name = "callback")]

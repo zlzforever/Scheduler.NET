@@ -1,9 +1,12 @@
 ﻿using DotnetSpider.Enterprise.Core.Utils;
 using Microsoft.Extensions.Logging;
+using Newtonsoft.Json;
 using System;
 using System.Collections.Generic;
+using System.Net;
 using System.Net.Http;
 using System.Text;
+using System.Threading;
 
 namespace Scheduler.NET.Core.Scheduler
 {
@@ -16,17 +19,28 @@ namespace Scheduler.NET.Core.Scheduler
 
 		private readonly ILogger<RecurringJobService> _Logger;
 
+		/// <summary>
+		/// 重试次数
+		/// </summary>
+		private  int _Times = 5;
+
 		public RecurringJobService(ILogger<RecurringJobService> _logger)
 		{
 			this._Logger = _logger;
 		}
 
-		public void ExecuteJob(params String[] arguments)
+		public void ExecuteJob(string json)
 		{
 			try
 			{
-				string url = String.Format("{0}?taskId={1}&token={2}", arguments[0], arguments[1], arguments[2]);
-				HttpUtil.RequestUrl<String>(url, HttpMethod.Post);
+				SpiderJob job = JsonConvert.DeserializeObject<SpiderJob>(json);
+				var rent = HttpUtil.PostUrl(job.CallBack, json);
+				while (rent != HttpStatusCode.OK && _Times > 0)
+				{
+					Thread.Sleep(3000);
+					ExecuteJob(json);
+					_Times--;
+				}
 			}
 			catch (Exception ex)
 			{

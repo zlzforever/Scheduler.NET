@@ -2,7 +2,7 @@
 using System.Collections.Generic;
 using System.Text;
 
-namespace DotnetSpider.Enterprise.Core.Domain
+namespace DotnetSpider.Enterprise.Core.Entities
 {
 
 	/// <summary>

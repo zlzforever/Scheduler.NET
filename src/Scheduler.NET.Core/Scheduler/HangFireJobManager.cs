@@ -2,8 +2,9 @@
 using Hangfire;
 using Hangfire.SqlServer;
 using Microsoft.Extensions.Logging;
+using Newtonsoft.Json;
 using Scheduler.NET.Core;
-using Scheduler.NET.Core.Domain;
+using Scheduler.NET.Core.Entities;
 using Scheduler.NET.Core.Scheduler;
 using System;
 using System.Collections.Generic;
@@ -32,7 +33,8 @@ namespace DotnetSpider.Enterprise.Core.Scheduler
 		/// </summary>
 		public string EnqueueHFJob(SpiderJob job)
 		{
-			return BackgroundJob.Enqueue<RecurringJobService>(x => x.ExecuteJob(job.CallBack, job.TaskId, job.Token, job.Cron));
+			string json = JsonConvert.SerializeObject(job);
+			return BackgroundJob.Enqueue<RecurringJobService>(x => x.ExecuteJob(json));
 		}
 
 		public void QueryHFJobs()
@@ -47,7 +49,8 @@ namespace DotnetSpider.Enterprise.Core.Scheduler
 		/// <param name="job"></param>
 		public void AddOrUpdateHFJob(SpiderJob job)
 		{
-			RecurringJob.AddOrUpdate<RecurringJobService>(job.TaskId, x => x.ExecuteJob(job.CallBack, job.TaskId, job.Token, job.Cron), job.Cron);
+			string json = JsonConvert.SerializeObject(job);
+			RecurringJob.AddOrUpdate<RecurringJobService>(job.TaskId, x => x.ExecuteJob(json), job.Cron);
 		}
 
 		/// <summary>

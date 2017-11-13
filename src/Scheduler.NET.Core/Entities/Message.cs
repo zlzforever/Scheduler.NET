@@ -3,7 +3,7 @@ using System.Collections.Generic;
 using System.Runtime.Serialization;
 using System.Text;
 
-namespace Scheduler.NET.Core.Domain
+namespace Scheduler.NET.Core.Entities
 {
 
 	public class Message : Message<String>

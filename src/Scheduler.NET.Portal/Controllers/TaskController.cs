@@ -6,9 +6,12 @@ using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Scheduler.NET.Core.Scheduler;
 using DotnetSpider.Enterprise.Core.Scheduler;
-using Scheduler.NET.Core.Domain;
+using Scheduler.NET.Core.Entities;
 using Microsoft.Extensions.Logging;
 using Hangfire;
+using DotnetSpider.Enterprise.Core.Utils;
+using System.Net.Http;
+using Newtonsoft.Json;
 
 namespace Scheduler.NET.Portal.Controllers
 {
@@ -31,17 +34,19 @@ namespace Scheduler.NET.Portal.Controllers
 		[HttpGet("{id}", Name = "Get")]
 		public object Get(String id)
 		{
+			//var user = new User() { Name = "ssss" };
+			//HttpUtil.PostUrl("http://localhost:54106/api/values?id=1123", JsonConvert.SerializeObject(user));
 			//_JobManager.EnqueueHFJob(null);
-			var its = JobStorage.Current.GetMonitoringApi().Queues();
-			var it1 = JobStorage.Current.GetMonitoringApi().ProcessingCount();
-			var it2 = JobStorage.Current.GetMonitoringApi().ProcessingJobs(1,100);
-			var it3 = JobStorage.Current.GetMonitoringApi().ScheduledCount();
-			var it4 = JobStorage.Current.GetMonitoringApi().ScheduledJobs(1, 100);
-			var it5 = JobStorage.Current.GetMonitoringApi().SucceededListCount();
-			var it6 = JobStorage.Current.GetMonitoringApi().SucceededJobs(1,100);
+			//var its = JobStorage.Current.GetMonitoringApi().Queues();
+			//var it1 = JobStorage.Current.GetMonitoringApi().ProcessingCount();
+			//var it2 = JobStorage.Current.GetMonitoringApi().ProcessingJobs(1,100);
+			//var it3 = JobStorage.Current.GetMonitoringApi().ScheduledCount();
+			//var it4 = JobStorage.Current.GetMonitoringApi().ScheduledJobs(1, 100);
+			//var it5 = JobStorage.Current.GetMonitoringApi().SucceededListCount();
+			//var it6 = JobStorage.Current.GetMonitoringApi().SucceededJobs(1,100);
 
-			var ss1 = JobStorage.Current.GetMonitoringApi().Servers();
-			var ss2 = JobStorage.Current.GetMonitoringApi().FetchedCount("DEFAULT");
+			//var ss1 = JobStorage.Current.GetMonitoringApi().Servers();
+			//var ss2 = JobStorage.Current.GetMonitoringApi().FetchedCount("DEFAULT");
 			return "value";
 		}
 
@@ -57,8 +62,16 @@ namespace Scheduler.NET.Portal.Controllers
 			{
 				if (value != null)
 				{
-					_JobManager.AddOrUpdateHFJob(value);
+					if (string.IsNullOrEmpty(value.Cron))
+					{
+						_JobManager.RemoveHFJob(value.TaskId);
+					}
+					else
+					{
+						_JobManager.AddOrUpdateHFJob(value);
+					}
 				}
+				
 				return Messager.GetOKMessage("succeed.");
 			}
 			catch (Exception ex)
@@ -67,19 +80,7 @@ namespace Scheduler.NET.Portal.Controllers
 				return Messager.GetFailMessage("filed.");
 			}
 		}
-
-		/// <summary>
-		/// 修改
-		/// </summary>
-		/// <param name="id"></param>
-		/// <param name="value"></param>
-		// PUT: api/Task/5
-		[HttpPut("{id}")]
-		public void Modify(int id, [FromBody]string value)
-		{
-
-		}
-
+		
 		/// <summary>
 		/// 删除任务
 		/// </summary>
@@ -90,5 +91,10 @@ namespace Scheduler.NET.Portal.Controllers
 		{
 
 		}
+	}
+
+	public class User
+	{
+		public string Name { get; set; }
 	}
 }
