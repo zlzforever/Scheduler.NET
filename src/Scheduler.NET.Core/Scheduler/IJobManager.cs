@@ -6,13 +6,10 @@ namespace Scheduler.NET.Core.Scheduler
 {
 	public interface IJobManager
 	{
-		void AddOrUpdateHFJob(SpiderJob job);
+		string AddOrUpdate(Job job);
 
-		string EnqueueHFJob(SpiderJob job);
+		void Remove(string jobId);
 
-		void RemoveHFJob(String jobId);
-
-		void Trigger(String jobId);
-
+		void Trigger(string jobId);
 	}
 }

@@ -2,7 +2,7 @@
 using System.Collections.Generic;
 using System.Text;
 
-namespace DotnetSpider.Enterprise.Core.Propertities
+namespace DotnetSpider.Enterprise.Core.Utils
 {
 	public class HttpContentTypes
 	{

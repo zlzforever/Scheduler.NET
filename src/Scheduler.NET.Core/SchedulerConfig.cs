@@ -25,5 +25,4 @@ namespace Scheduler.NET.Core
 
 		public String ConnectionString { get; set; }
 	}
-	
 }

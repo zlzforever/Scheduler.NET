@@ -1,5 +1,4 @@
-﻿using DotnetSpider.Enterprise.Core.Propertities;
-using Microsoft.Extensions.Logging;
+﻿using Microsoft.Extensions.Logging;
 using Newtonsoft.Json;
 using System;
 using System.Collections.Generic;
@@ -9,61 +8,20 @@ using System.Text;
 
 namespace DotnetSpider.Enterprise.Core.Utils
 {
-
-	public class HttpUtil
+	public static class HttpUtil
 	{
-		private static HttpUtil _instance = null;
-		private static object _lock = new object();
 		private static readonly HttpClient httpClient = new HttpClient();
 
-		public HttpUtil()
+		public static HttpStatusCode Post(string url, string data)
 		{
-			lock (_lock)
+			var postData = $"data={WebUtility.HtmlEncode(data)}";
+			var content = new StringContent(postData, Encoding.UTF8, HttpContentTypes.ApplicationXWwwFormUrlEncoded);
+			return httpClient.PostAsync(url, content).ContinueWith((task) =>
 			{
-				_instance = _instance ?? new HttpUtil();
-			}
+				HttpResponseMessage response = task.Result;
+				response.EnsureSuccessStatusCode();
+				return response.StatusCode;
+			}).Result;
 		}
-
-		public static HttpStatusCode PostUrl(string url, string json)
-		{
-			var content = new StringContent(json, Encoding.UTF8, "application/json");
-			var code = default(HttpStatusCode);
-			httpClient.PostAsync(url, content).ContinueWith((task) =>
-			{
-				try
-				{
-					HttpResponseMessage response = task.Result;
-					response.EnsureSuccessStatusCode();
-					code = response.StatusCode;
-				}
-				catch (Exception ex)
-				{
-
-				}
-			});
-			return code;
-		}
-
-		public static async void GetUrl(string url)
-		{
-			await httpClient.GetAsync(url).ContinueWith((task) =>
-			{
-				try
-				{
-					HttpResponseMessage response = task.Result;
-					response.EnsureSuccessStatusCode();
-
-					var result = response.Content.ReadAsStringAsync().Result;
-					if (!string.IsNullOrEmpty(result))
-					{
-					}
-				}
-				catch (Exception ex)
-				{
-				}
-			});
-		}
-
-
 	}
 }
