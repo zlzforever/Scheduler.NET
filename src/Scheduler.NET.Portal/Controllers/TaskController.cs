@@ -16,14 +16,11 @@ namespace Scheduler.NET.Portal.Controllers
 {
 	public class TaskController : Controller
 	{
-		private readonly ILogger<TaskController> _Logger;
-
 		private readonly IJobManager _jobManager;
 
-		public TaskController(IJobManager jobManager, ILogger<TaskController> logger)
+		public TaskController(IJobManager jobManager)
 		{
 			_jobManager = jobManager;
-			_Logger = logger;
 		}
 
 		/// <summary>
