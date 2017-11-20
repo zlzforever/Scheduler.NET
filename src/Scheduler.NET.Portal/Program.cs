@@ -9,12 +9,26 @@ using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Logging;
 using Scheduler.NET.Core.Scheduler;
 using DotnetSpider.Enterprise.Core.Scheduler;
+using System.Runtime.InteropServices;
 
 namespace Scheduler.NET.Portal
 {
 	public class Program
 	{
-		static string Url = File.ReadAllLines(Path.Combine(AppContext.BaseDirectory, "domain.ini"))[0];
+		private static readonly string Url;
+
+		static Program()
+		{
+			string hostUrl = "http://*:5001";
+			if (!RuntimeInformation.IsOSPlatform(OSPlatform.Windows))
+			{
+				if (File.Exists(Path.Combine(AppContext.BaseDirectory, "host.config")))
+				{
+					hostUrl = File.ReadAllLines("host.config")[0];
+				}
+			}
+			Url = hostUrl;
+		}
 
 		public static void Main(string[] args)
 		{

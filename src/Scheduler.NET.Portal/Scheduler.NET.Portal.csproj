@@ -38,6 +38,12 @@
   </ItemGroup>
 
   <ItemGroup>
+    <None Include="host.config">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
+  </ItemGroup>
+
+  <ItemGroup>
     <ProjectReference Include="..\Scheduler.NET.Core\Scheduler.NET.Core.csproj" />
   </ItemGroup>
 
@@ -48,12 +54,6 @@
     <Content Update="nlog.config">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </Content>
-  </ItemGroup>
-
-  <ItemGroup>
-    <None Update="domain.ini">
-      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-    </None>
   </ItemGroup>
 <PropertyGroup>
   <UserSecretsId>aspnet-TestApp-ce345b64-19cf-4972-b34f-d16f2e7976ed</UserSecretsId>
