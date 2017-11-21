@@ -24,10 +24,17 @@ namespace DotnetSpider.Enterprise.Core.Scheduler
 		/// <param name="job"></param>
 		public string AddOrUpdate(Job job)
 		{
-			job.Name = string.IsNullOrEmpty(job.Name) ? Guid.NewGuid().ToString("N") : job.Name;
-			string json = JsonConvert.SerializeObject(job);
-			RecurringJob.AddOrUpdate<JobExecutor>(job.Name, x => x.Execute(json), job.Cron);
-			return job.Name;
+			try
+			{
+				job.Name = string.IsNullOrEmpty(job.Name) ? Guid.NewGuid().ToString("N") : job.Name;
+				string json = JsonConvert.SerializeObject(job);
+				RecurringJob.AddOrUpdate<JobExecutor>(job.Name, x => x.Execute(json), job.Cron);
+				return job.Name;
+			}
+			catch (ArgumentException ae)
+			{
+				return string.Empty;
+			}
 		}
 
 		/// <summary>

@@ -32,7 +32,12 @@ namespace Scheduler.NET.Portal.Controllers
 		{
 			if (ModelState.IsValid)
 			{
-				return new JsonResult(_jobManager.AddOrUpdate(value));
+				var result = _jobManager.AddOrUpdate(value);
+				if (string.IsNullOrEmpty(result))
+				{
+					return NoContent();
+				}
+				return new JsonResult(result);
 			}
 			return BadRequest();
 		}
