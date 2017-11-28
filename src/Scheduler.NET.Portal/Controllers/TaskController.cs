@@ -32,6 +32,10 @@ namespace Scheduler.NET.Portal.Controllers
 		{
 			if (ModelState.IsValid)
 			{
+				if (value.Cron == "* * * * 2999")
+				{
+					return Ok();
+				}
 				var result = _jobManager.AddOrUpdate(value);
 				if (string.IsNullOrEmpty(result))
 				{
