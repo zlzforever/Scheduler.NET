@@ -20,12 +20,9 @@ namespace Scheduler.NET.Portal
 		static Program()
 		{
 			string hostUrl = "http://*:5001";
-			if (!RuntimeInformation.IsOSPlatform(OSPlatform.Windows))
+			if (File.Exists(Path.Combine(AppContext.BaseDirectory, "host.config")))
 			{
-				if (File.Exists(Path.Combine(AppContext.BaseDirectory, "host.config")))
-				{
-					hostUrl = File.ReadAllLines("host.config")[0];
-				}
+				hostUrl = File.ReadAllLines("host.config")[0];
 			}
 			Url = hostUrl;
 		}
