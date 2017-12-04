@@ -1,15 +1,9 @@
-﻿using DotnetSpider.Enterprise.Core.Utils;
-using Hangfire;
-using Hangfire.SqlServer;
-using Microsoft.Extensions.Logging;
+﻿using Hangfire;
 using Newtonsoft.Json;
-using Scheduler.NET.Core;
+using NLog;
 using Scheduler.NET.Core.Scheduler;
+using Scheduler.NET.Core.Utils;
 using System;
-using System.Collections.Generic;
-using System.Collections.Specialized;
-using System.Net.Http;
-using System.Text;
 
 namespace DotnetSpider.Enterprise.Core.Scheduler
 {
@@ -18,6 +12,8 @@ namespace DotnetSpider.Enterprise.Core.Scheduler
 	/// </summary>
 	public class HangFireJobManager : IJobManager
 	{
+		private readonly static ILogger Logger = LogCenter.GetLogger();
+
 		/// <summary>
 		/// 添加或者修改
 		/// </summary>
@@ -26,13 +22,14 @@ namespace DotnetSpider.Enterprise.Core.Scheduler
 		{
 			try
 			{
+				Logger.Info($"Try to add or update job: {JsonConvert.SerializeObject(job)}.");
 				job.Name = string.IsNullOrEmpty(job.Name) ? Guid.NewGuid().ToString("N") : job.Name;
-				string json = JsonConvert.SerializeObject(job);
-				RecurringJob.AddOrUpdate<JobExecutor>(job.Name, x => x.Execute(json), job.Cron);
+				RecurringJob.AddOrUpdate<JobExecutor>(job.Name, x => x.Execute(job), job.Cron);
 				return job.Name;
 			}
-			catch (ArgumentException ae)
+			catch (Exception e)
 			{
+				Logger.Error($"AddOrUpdate job failed: {e}");
 				return string.Empty;
 			}
 		}
@@ -42,7 +39,15 @@ namespace DotnetSpider.Enterprise.Core.Scheduler
 		/// </summary>
 		public void Remove(string jobId)
 		{
-			Hangfire.RecurringJob.RemoveIfExists(jobId);
+			try
+			{
+				Logger.Info($"Try to remove job: {jobId}.");
+				RecurringJob.RemoveIfExists(jobId);
+			}
+			catch (Exception e)
+			{
+				Logger.Error($"Remove job failed: {e}");
+			}
 		}
 
 		/// <summary>
@@ -51,7 +56,15 @@ namespace DotnetSpider.Enterprise.Core.Scheduler
 		/// <param name="jobId"></param>
 		public void Trigger(string jobId)
 		{
-			RecurringJob.Trigger(jobId);
+			try
+			{
+				Logger.Info($"Try to trigger job: {jobId}.");
+				RecurringJob.Trigger(jobId);
+			}
+			catch (Exception e)
+			{
+				Logger.Error($"Trigger job failed: {e}");
+			}
 		}
 	}
 }

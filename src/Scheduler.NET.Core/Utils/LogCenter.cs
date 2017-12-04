@@ -1,9 +1,7 @@
 ﻿using NLog;
 using NLog.Config;
 using System;
-using System.Collections.Generic;
 using System.IO;
-using System.Text;
 
 namespace Scheduler.NET.Core.Utils
 {

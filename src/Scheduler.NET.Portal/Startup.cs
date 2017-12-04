@@ -1,26 +1,16 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Threading.Tasks;
-using Microsoft.AspNetCore.Builder;
+﻿using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
-using StackExchange.Redis;
-using Hangfire;
 using Scheduler.NET.Core;
-using Microsoft.Extensions.Options;
-using System.IO;
-using DotnetSpider.Enterprise.Core.Scheduler;
-using Scheduler.NET.Core.Scheduler;
-using Scheduler.NET.Portal.Filter;
 
 namespace Scheduler.NET.Portal
 {
 	public class Startup
 	{
+		private readonly IConfiguration _configuration;
 
-		public Startup(IHostingEnvironment env)
+		public Startup(IHostingEnvironment env,IConfiguration configuration)
 		{
 			var builder = new ConfigurationBuilder()
 				.SetBasePath(env.ContentRootPath);
@@ -36,38 +26,15 @@ namespace Scheduler.NET.Portal
 				builder.AddJsonFile("appsettings.json", optional: true, reloadOnChange: true);
 			}
 			builder.AddEnvironmentVariables();
-			Configuration = builder.Build();
+			_configuration = builder.Build();
 		}
-
-		public SchedulerConfig _SchedulerConfig { get; set; }
-		public IConfiguration Configuration { get; }
-
-		public Startup(IConfiguration configuration)
-		{
-			Configuration = configuration;
-		}
-
+ 
 		// This method gets called by the runtime. Use this method to add services to the container.
 		public void ConfigureServices(IServiceCollection services)
 		{
 			services.AddMvc();
 
-			services.Configure<SchedulerConfig>(this.Configuration.GetSection("AppSettings"));
-
-			services.AddTransient<IJobManager, HangFireJobManager>();
-
-			_SchedulerConfig = services.BuildServiceProvider().GetService<IOptions<SchedulerConfig>>().Value;
-			if (_SchedulerConfig.SqlConfig.Enable)
-			{
-				services.AddHangfire(r => r.UseSqlServerStorage(_SchedulerConfig.SqlConfig.ConnectionString));
-			}
-			else
-			{
-				services.AddHangfire(x =>
-				{
-					x.UseRedisStorage(_SchedulerConfig.RedisConfig.ConnectionString);
-				});
-			}
+			services.AddScheduler(_configuration);
 		}
 
 		// This method gets called by the runtime. Use this method to configure the HTTP request pipeline.
@@ -82,13 +49,8 @@ namespace Scheduler.NET.Portal
 			{
 				app.UseExceptionHandler("/Home/Error");
 			}
-			
-			app.UseHangfireServer();
-			app.UseHangfireDashboard("/hangfire", new DashboardOptions()
-			{
-				Authorization = new[] { new CustomAuthorizeFilter() }
-			});
 
+			app.UseScheduler();
 
 			app.UseStaticFiles();
 

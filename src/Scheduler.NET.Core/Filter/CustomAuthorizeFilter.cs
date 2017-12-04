@@ -1,11 +1,7 @@
 ﻿using Hangfire.Annotations;
 using Hangfire.Dashboard;
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Threading.Tasks;
 
-namespace Scheduler.NET.Portal.Filter
+namespace Scheduler.NET.Core.Filter
 {
 	public class CustomAuthorizeFilter : IDashboardAuthorizationFilter
 	{

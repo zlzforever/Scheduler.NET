@@ -1,8 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Text;
-
-namespace DotnetSpider.Enterprise.Core.Utils
+﻿namespace DotnetSpider.Enterprise.Core.Utils
 {
 	public class HttpContentTypes
 	{

@@ -1,40 +1,34 @@
 ﻿using System;
-using System.Collections.Generic;
 using System.IO;
-using System.Linq;
-using System.Threading.Tasks;
 using Microsoft.AspNetCore;
 using Microsoft.AspNetCore.Hosting;
-using Microsoft.Extensions.Configuration;
-using Microsoft.Extensions.Logging;
-using Scheduler.NET.Core.Scheduler;
-using DotnetSpider.Enterprise.Core.Scheduler;
-using System.Runtime.InteropServices;
+using Newtonsoft.Json;
+using Newtonsoft.Json.Linq;
+using Scheduler.NET.Core;
 
 namespace Scheduler.NET.Portal
 {
 	public class Program
 	{
-		private static readonly string Url;
-
-		static Program()
-		{
-			string hostUrl = "http://*:5001";
-			if (File.Exists(Path.Combine(AppContext.BaseDirectory, "host.config")))
-			{
-				hostUrl = File.ReadAllLines("host.config")[0];
-			}
-			Url = hostUrl;
-		}
-
 		public static void Main(string[] args)
 		{
-			BuildWebHost(args).Run();
-		}
+#if DEBUG
+			var appsetingsPath = Path.Combine(AppContext.BaseDirectory, "appsettings.Development.json");
+#else
+			var appsetingsPath = Path.Combine(AppContext.BaseDirectory, "appsettings.json");
+#endif
+			var appsetings = JsonConvert.DeserializeObject<JObject>(File.ReadAllText(appsetingsPath)).SelectToken("$.AppSettings").ToObject<SchedulerConfig>();
 
-		public static IWebHost BuildWebHost(string[] args) =>
-			WebHost.CreateDefaultBuilder(args)
-				.UseStartup<Startup>().UseUrls(Url)
+			var url = "http://*:5001";
+			if (!string.IsNullOrEmpty(appsetings.Host) && !string.IsNullOrWhiteSpace(appsetings.Host))
+			{
+				url = appsetings.Host;
+			}
+
+			IWebHost host = WebHost.CreateDefaultBuilder(args)
+				.UseStartup<Startup>().UseUrls(url)
 				.Build();
+			host.Run();
+		}
 	}
 }

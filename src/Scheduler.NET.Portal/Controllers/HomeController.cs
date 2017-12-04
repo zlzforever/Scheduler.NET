@@ -1,25 +1,14 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Diagnostics;
-using System.Linq;
-using System.Threading.Tasks;
+﻿using System.Diagnostics;
 using Microsoft.AspNetCore.Mvc;
 using Scheduler.NET.Portal.Models;
-using Scheduler.NET.Core;
-using Microsoft.Extensions.Options;
-using Microsoft.AspNetCore.Builder;
-using Microsoft.CodeAnalysis.Options;
 using Scheduler.NET.Core.Scheduler;
 
 namespace Scheduler.NET.Portal.Controllers
 {
 	public class HomeController : Controller
 	{
-		public IJobManager _JobManager { get; set; }
-
-		public HomeController(IJobManager _jobManager)
+		public HomeController()
 		{
-			_JobManager = _jobManager;
 		}
 
 		public IActionResult Index()

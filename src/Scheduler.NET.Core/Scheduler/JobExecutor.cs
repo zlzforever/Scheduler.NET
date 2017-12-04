@@ -1,13 +1,10 @@
 ﻿using DotnetSpider.Enterprise.Core.Utils;
-using Newtonsoft.Json;
 using NLog;
+using Polly;
+using Polly.Retry;
 using Scheduler.NET.Core.Utils;
 using System;
-using System.Collections.Generic;
-using System.Net;
 using System.Net.Http;
-using System.Text;
-using System.Threading;
 
 namespace Scheduler.NET.Core.Scheduler
 {
@@ -21,22 +18,26 @@ namespace Scheduler.NET.Core.Scheduler
 		/// <summary>
 		/// 重试次数
 		/// </summary>
-		private int _retryTimes = 5;
+		private static int RetryTimes = 5;
 
-		public void Execute(string json)
+		private readonly static RetryPolicy RetryPolicy = Policy.Handle<HttpRequestException>().Retry(RetryTimes, (ex, count) =>
+		{
+			Logger.Error($"Execute job failed [{count}]: {ex}");
+		});
+
+		public void Execute(Job job)
 		{
 			try
 			{
-				Job job = JsonConvert.DeserializeObject<Job>(json);
-				while (HttpUtil.Post(job.Url, job.Data) != HttpStatusCode.OK && _retryTimes > 0)
+				RetryPolicy.Execute(() =>
 				{
-					Thread.Sleep(3000);
-					_retryTimes--;
-				}
+					var response = HttpUtil.Post(job.Url, job.Data);
+					response.EnsureSuccessStatusCode();
+				});
 			}
-			catch (Exception ex)
+			catch (Exception e)
 			{
-				Logger.Error(ex.ToString());
+				Logger.Error($"Execute job failed: {e}");
 			}
 		}
 	}
