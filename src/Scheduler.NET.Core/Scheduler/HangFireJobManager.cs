@@ -24,7 +24,7 @@ namespace DotnetSpider.Enterprise.Core.Scheduler
 			{
 				Logger.Info($"Try to add or update job: {JsonConvert.SerializeObject(job)}.");
 				job.Name = string.IsNullOrEmpty(job.Name) ? Guid.NewGuid().ToString("N") : job.Name;
-				RecurringJob.AddOrUpdate<JobExecutor>(job.Name, x => x.Execute(job), job.Cron);
+				RecurringJob.AddOrUpdate<JobExecutor>(job.Name, x => x.Execute(job), job.Cron, TimeZoneInfo.Local);
 				return job.Name;
 			}
 			catch (Exception e)
