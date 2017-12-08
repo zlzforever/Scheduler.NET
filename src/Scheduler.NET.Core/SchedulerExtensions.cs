@@ -1,5 +1,6 @@
 ﻿using DotnetSpider.Enterprise.Core.Scheduler;
 using Hangfire;
+using Hangfire.SqlServer;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
@@ -27,7 +28,6 @@ namespace Scheduler.NET.Core
 
 			services.AddTransient<IJobManager, HangFireJobManager>();
 			var schedulerConfig = section.Get<SchedulerConfig>();
-
 			switch (schedulerConfig.HangfireStorageType.ToLower())
 			{
 				case "sqlserver":

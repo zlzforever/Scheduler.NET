@@ -6,7 +6,13 @@ namespace DotnetSpider.Enterprise.Core.Utils
 {
 	public static class HttpUtil
 	{
-		private static readonly HttpClient Client = new HttpClient();
+		private static readonly HttpClient Client = new HttpClient(new HttpClientHandler
+		{
+			AllowAutoRedirect = true,
+			AutomaticDecompression = DecompressionMethods.Deflate | DecompressionMethods.GZip,
+			UseProxy = true,
+			UseCookies = false
+		});
 
 		public static HttpResponseMessage Post(string url, string data)
 		{
