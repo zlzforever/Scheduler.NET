@@ -1,4 +1,5 @@
 ﻿using DotnetSpider.Enterprise.Core.Utils;
+using Newtonsoft.Json;
 using NLog;
 using Polly;
 using Polly.Retry;
@@ -37,7 +38,7 @@ namespace Scheduler.NET.Core.Scheduler
 			}
 			catch (Exception e)
 			{
-				Logger.Error($"Execute job failed: {e}");
+				Logger.Error($"Execute {JsonConvert.SerializeObject(job)} failed: {e}");
 			}
 		}
 	}
