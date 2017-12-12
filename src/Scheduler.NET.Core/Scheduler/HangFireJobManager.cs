@@ -22,9 +22,10 @@ namespace DotnetSpider.Enterprise.Core.Scheduler
 		{
 			try
 			{
-				Logger.Info($"Try to add or update job: {JsonConvert.SerializeObject(job)}.");
+				Logger.Info($"Add or update job: {JsonConvert.SerializeObject(job)}.");
 				job.Name = string.IsNullOrEmpty(job.Name) ? Guid.NewGuid().ToString("N") : job.Name;
 				RecurringJob.AddOrUpdate<JobExecutor>(job.Name, x => x.Execute(job), job.Cron, TimeZoneInfo.Local);
+				
 				return job.Name;
 			}
 			catch (Exception e)
@@ -41,7 +42,7 @@ namespace DotnetSpider.Enterprise.Core.Scheduler
 		{
 			try
 			{
-				Logger.Info($"Try to remove job: {jobId}.");
+				Logger.Info($"Remove job: {jobId}.");
 				RecurringJob.RemoveIfExists(jobId);
 			}
 			catch (Exception e)
@@ -58,7 +59,7 @@ namespace DotnetSpider.Enterprise.Core.Scheduler
 		{
 			try
 			{
-				Logger.Info($"Try to trigger job: {jobId}.");
+				Logger.Info($"Trigger job: {jobId}.");
 				RecurringJob.Trigger(jobId);
 			}
 			catch (Exception e)
