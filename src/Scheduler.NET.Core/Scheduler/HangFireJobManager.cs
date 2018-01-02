@@ -30,7 +30,7 @@ namespace DotnetSpider.Enterprise.Core.Scheduler
 			}
 			catch (Exception e)
 			{
-				Logger.Error($"AddOrUpdate job failed: {e}");
+				Logger.Error($"AddOrUpdate job failed {JsonConvert.SerializeObject(job)}: {e}");
 				return string.Empty;
 			}
 		}
@@ -47,7 +47,7 @@ namespace DotnetSpider.Enterprise.Core.Scheduler
 			}
 			catch (Exception e)
 			{
-				Logger.Error($"Remove job failed: {e}");
+				Logger.Error($"Remove job failed {jobId}: {e}");
 			}
 		}
 
@@ -64,7 +64,7 @@ namespace DotnetSpider.Enterprise.Core.Scheduler
 			}
 			catch (Exception e)
 			{
-				Logger.Error($"Trigger job failed: {e}");
+				Logger.Error($"Trigger job {jobId} failed: {e}");
 			}
 		}
 	}
