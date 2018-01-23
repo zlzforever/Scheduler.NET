@@ -1,5 +1,4 @@
-﻿using DotnetSpider.Enterprise.Core.Utils;
-using Newtonsoft.Json;
+﻿using Jil;
 using NLog;
 using Polly;
 using Polly.Retry;
@@ -7,12 +6,12 @@ using Scheduler.NET.Core.Utils;
 using System;
 using System.Net.Http;
 
-namespace Scheduler.NET.Core.Scheduler
+namespace Scheduler.NET.Core.JobManager.Job
 {
 	/// <summary>
 	/// 
 	/// </summary>
-	public class JobExecutor
+	public class CallbackJobExecutor : IJobExecutor<CallbackJob>
 	{
 		private readonly static ILogger Logger = LogCenter.GetLogger();
 
@@ -26,19 +25,23 @@ namespace Scheduler.NET.Core.Scheduler
 			Logger.Error($"Execute job failed [{count}]: {ex}");
 		});
 
-		public void Execute(Job job)
+		public void Execute(CallbackJob job)
 		{
 			try
 			{
+#if Release
 				RetryPolicy.Execute(() =>
 				{
 					var response = HttpUtil.Post(job.Url, job.Data);
 					response.EnsureSuccessStatusCode();
 				});
+#else
+				Logger.Info($"Run callback job {JSON.Serialize(job)}");
+#endif
 			}
 			catch (Exception e)
 			{
-				Logger.Error($"Execute {JsonConvert.SerializeObject(job)} failed: {e}");
+				Logger.Error($"Execute {JSON.Serialize(job)} failed: {e}");
 			}
 		}
 	}

@@ -17,7 +17,7 @@ namespace Scheduler.NET.Portal
 #else
 			var appsetingsPath = Path.Combine(AppContext.BaseDirectory, "appsettings.json");
 #endif
-			var appsetings = JsonConvert.DeserializeObject<JObject>(File.ReadAllText(appsetingsPath)).SelectToken("$.AppSettings").ToObject<SchedulerConfig>();
+			var appsetings = JsonConvert.DeserializeObject<JObject>(File.ReadAllText(appsetingsPath)).SelectToken($"$.{SchedulerConfiguration.DefaultSettingKey}").ToObject<SchedulerConfiguration>();
 
 			var url = "http://*:5001";
 			if (!string.IsNullOrEmpty(appsetings.Host) && !string.IsNullOrWhiteSpace(appsetings.Host))

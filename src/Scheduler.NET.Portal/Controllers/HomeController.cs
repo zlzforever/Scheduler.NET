@@ -1,7 +1,6 @@
 ﻿using System.Diagnostics;
 using Microsoft.AspNetCore.Mvc;
 using Scheduler.NET.Portal.Models;
-using Scheduler.NET.Core.Scheduler;
 
 namespace Scheduler.NET.Portal.Controllers
 {

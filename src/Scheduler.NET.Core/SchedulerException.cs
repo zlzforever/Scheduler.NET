@@ -6,6 +6,6 @@ namespace Scheduler.NET.Core
 	{
 		public SchedulerException() { }
 
-		public SchedulerException(string msg) : base(msg) { }
+		public SchedulerException(string msg, Exception inner = null) : base(msg, inner) { }
 	}
 }
