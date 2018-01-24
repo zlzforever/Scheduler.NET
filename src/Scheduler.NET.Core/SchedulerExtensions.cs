@@ -33,7 +33,6 @@ namespace Scheduler.NET.Core
 			});
 
 			var loggerFactory = app.ApplicationServices.GetRequiredService<ILoggerFactory>();
-			loggerFactory.AddConsole(app.ApplicationServices.GetRequiredService<IConfiguration>().GetSection("Logging"));
 			loggerFactory.AddDebug();
 			loggerFactory.AddNLog();
 		}
@@ -48,6 +47,7 @@ namespace Scheduler.NET.Core
 
 			services.AddTransient<IJobManager<CallbackJob>, HangFireCallbackJobManager>();
 			services.AddTransient<ISchedulerConfiguration, SchedulerConfiguration>();
+			services.AddTransient<IJobManager<RedisJob>, HangFireRedisJobManager>();
 
 			var schedulerConfig = section.Get<SchedulerConfiguration>();
 

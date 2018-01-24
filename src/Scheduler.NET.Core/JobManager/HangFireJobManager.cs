@@ -29,6 +29,10 @@ namespace DotnetSpider.Enterprise.Core.JobManager
 				RecurringJob.AddOrUpdate<E>(job.Name, x => x.Execute(job), job.Cron, TimeZoneInfo.Local);
 				return job.Name;
 			}
+			catch (SchedulerException)
+			{
+				throw;
+			}
 			catch (Exception e)
 			{
 				throw new SchedulerException($"Add job failed {JSON.Serialize(job)}.", e);
@@ -46,13 +50,18 @@ namespace DotnetSpider.Enterprise.Core.JobManager
 				using (var conn = JobStorage.Current.GetConnection())
 				{
 					// 这里是否需要考虑性能
-					if (conn.GetAllEntriesFromHash($"recurring-job:{job.Name}").Count == 0)
+					var entries = conn.GetAllEntriesFromHash($"recurring-job:{job.Name}");
+					if (entries == null || conn.GetAllEntriesFromHash($"recurring-job:{job.Name}").Count == 0)
 					{
 						throw new SchedulerException($"Job {nameof(job.Name)} unfound.");
 					}
 					_logger.LogInformation($"Update job: {job}.");
 					RecurringJob.AddOrUpdate<E>(job.Name, x => x.Execute(job), job.Cron, TimeZoneInfo.Local);
 				}
+			}
+			catch (SchedulerException)
+			{
+				throw;
 			}
 			catch (Exception e)
 			{
