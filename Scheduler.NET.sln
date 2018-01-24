@@ -1,11 +1,16 @@
 ﻿
 Microsoft Visual Studio Solution File, Format Version 12.00
 # Visual Studio 15
-VisualStudioVersion = 15.0.26730.16
+VisualStudioVersion = 15.0.27130.2024
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Scheduler.NET.Core", "src\Scheduler.NET.Core\Scheduler.NET.Core.csproj", "{61F8D02C-BEFC-4B20-AE33-C5A5DE9BF9B8}"
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Scheduler.NET.Portal", "src\Scheduler.NET.Portal\Scheduler.NET.Portal.csproj", "{31AA85E1-AE23-411A-8630-CB2340E090E1}"
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Solution Items", "Solution Items", "{0F3A7DA7-420E-47B9-AEA0-BA5B554923DB}"
+	ProjectSection(SolutionItems) = preProject
+		README.md = README.md
+	EndProjectSection
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
