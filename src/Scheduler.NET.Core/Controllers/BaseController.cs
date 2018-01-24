@@ -1,16 +1,23 @@
 ﻿using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.Filters;
+using Microsoft.Extensions.Logging;
+using Scheduler.NET.Core.JobManager;
+using Scheduler.NET.Core.JobManager.Job;
 using System.Linq;
 
 namespace Scheduler.NET.Core.Controllers
 {
-	public class BaseController : Controller
+	public abstract class BaseController<T> : Controller where T : IJob
 	{
+		private readonly IJobManager<T> _jobManager;
 		private readonly ISchedulerConfiguration _schedulerConfiguration;
+		protected readonly ILogger _logger;
 
-		protected BaseController(ISchedulerConfiguration configuration)
+		protected BaseController(IJobManager<T> jobManager, ILoggerFactory loggerFactory, ISchedulerConfiguration configuration)
 		{
 			_schedulerConfiguration = configuration;
+			_jobManager = jobManager;
+			_logger = loggerFactory.CreateLogger(GetType());
 		}
 
 		public override void OnActionExecuting(ActionExecutingContext context)
@@ -23,17 +30,84 @@ namespace Scheduler.NET.Core.Controllers
 			base.OnActionExecuting(context);
 		}
 
-		public IActionResult Success()
+		/// <summary>
+		/// 添加任务
+		/// </summary>
+		/// <param name="value"></param>
+		[HttpPost]
+		public IActionResult Create([FromBody]T value)
+		{
+			if (ModelState.IsValid)
+			{
+				// 这个时间永远不会触发, 表示是手动触发项目
+				if (value.Cron == "* * * * 2999")
+				{
+					return Success();
+				}
+				var result = _jobManager.Create(value);
+
+				if (string.IsNullOrEmpty(result))
+				{
+					return Failed("Add job failed.");
+				}
+				else
+				{
+					return Success(result);
+				}
+			}
+			else
+			{
+				throw new SchedulerException($"Error parameters: {GetModelStateError()}.");
+			}
+		}
+
+		[HttpPut]
+		public IActionResult Update([FromBody]T value)
+		{
+			if (ModelState.IsValid)
+			{
+				// 这个时间永远不会触发, 表示是手动触发项目
+				if (value.Cron == "* * * * 2999")
+				{
+					return Success();
+				}
+				else
+				{
+					_jobManager.Update(value);
+					return Success();
+				}
+			}
+			else
+			{
+				throw new SchedulerException($"Error parameters: {GetModelStateError()}.");
+			}
+		}
+
+		[HttpDelete("{id}")]
+		public IActionResult Delete(string id)
+		{
+			_jobManager.Delete(id);
+			return Success();
+		}
+
+		[HttpGet("{id}")]
+		public IActionResult Trigger(string id)
+		{
+			_jobManager.Trigger(id);
+			return Success();
+		}
+
+		protected IActionResult Success()
 		{
 			return new JsonResult(new StandardResult { Code = 100, Status = Status.Sucess });
 		}
 
-		public IActionResult Success(object data, string message = null)
+		protected IActionResult Success(object data, string message = null)
 		{
 			return new JsonResult(new StandardResult { Code = 100, Status = Status.Sucess, Data = data, Message = message });
 		}
 
-		public IActionResult Failed(string message = null)
+		protected IActionResult Failed(string message = null)
 		{
 			return new JsonResult(new StandardResult { Code = 103, Status = Status.Failed, Message = message });
 		}

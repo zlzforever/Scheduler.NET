@@ -9,9 +9,9 @@ using Scheduler.NET.Core.JobManager.Job;
 namespace Scheduler.NET.Core.Controllers.V1
 {
 	[Route("api/v1.0/[controller]")]
-	public class CallbackJobController : BaseController<CallbackJob>
+	public class RedisJobController : BaseController<RedisJob>
 	{
-		public CallbackJobController(IJobManager<CallbackJob> jobManager, ILoggerFactory loggerFactory, ISchedulerConfiguration configuration) : base(jobManager, loggerFactory, configuration)
+		public RedisJobController(IJobManager<RedisJob> jobManager, ILoggerFactory loggerFactory, ISchedulerConfiguration configuration) : base(jobManager, loggerFactory, configuration)
 		{
 		}
 	}

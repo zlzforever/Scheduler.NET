@@ -16,11 +16,6 @@ namespace Scheduler.NET.Core.JobManager.Job
 	{
 		private readonly RetryPolicy _retryPolicy;
 
-		/// <summary>
-		/// 重试次数
-		/// </summary>
-		public static int RetryTimes = 5;
-
 		public CallbackJobExecutor() : base()
 		{
 			_retryPolicy = Policy.Handle<HttpRequestException>().Retry(RetryTimes, (ex, count) =>

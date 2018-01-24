@@ -107,4 +107,11 @@ namespace DotnetSpider.Enterprise.Core.JobManager
 		{
 		}
 	}
+
+	public class HangFireRedisJobManager : HangFireJobManager<RedisJob, RedisJobExecutor>
+	{
+		public HangFireRedisJobManager(ILoggerFactory loggerFactory) : base(loggerFactory)
+		{
+		}
+	}
 }

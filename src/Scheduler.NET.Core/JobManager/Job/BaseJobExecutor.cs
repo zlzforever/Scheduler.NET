@@ -10,6 +10,11 @@ namespace Scheduler.NET.Core.JobManager.Job
 	{
 		protected readonly ILogger _logger;
 
+		/// <summary>
+		/// 重试次数
+		/// </summary>
+		public static int RetryTimes = 5;
+
 		public BaseJobExecutor()
 		{
 			_logger = SchedulerExtensions.ServiceProvider.GetService<ILoggerFactory>().CreateLogger(GetType());
