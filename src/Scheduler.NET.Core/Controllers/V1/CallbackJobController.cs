@@ -1,12 +1,14 @@
-﻿using Jil;
+﻿using Hangfire.Annotations;
+using Jil;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Logging;
 using Newtonsoft.Json;
 using Scheduler.NET.Core.JobManager;
 using Scheduler.NET.Core.JobManager.Job;
 
-namespace Scheduler.NET.Core.Controllers
+namespace Scheduler.NET.Core.Controllers.V1
 {
+	[Route("api/v1.0/[controller]")]
 	public class CallbackJobController : BaseController
 	{
 		private readonly IJobManager<CallbackJob> _jobManager;
@@ -23,7 +25,7 @@ namespace Scheduler.NET.Core.Controllers
 		/// </summary>
 		/// <param name="value"></param>
 		[HttpPost]
-		public IActionResult Add([FromBody]CallbackJob value)
+		public IActionResult Create([FromBody]CallbackJob value)
 		{
 			if (ModelState.IsValid)
 			{
@@ -32,7 +34,7 @@ namespace Scheduler.NET.Core.Controllers
 				{
 					return Success();
 				}
-				var result = _jobManager.Add(value);
+				var result = _jobManager.Create(value);
 
 				if (string.IsNullOrEmpty(result))
 				{
@@ -45,12 +47,12 @@ namespace Scheduler.NET.Core.Controllers
 			}
 			else
 			{
-				throw new SchedulerException($"Error parameters: {JSON.Serialize(value)}.");
+				throw new SchedulerException($"Error parameters: {GetModelStateError()}.");
 			}
 		}
 
 		[HttpPut]
-		public IActionResult Update(string id, [FromBody]CallbackJob value)
+		public IActionResult Update([FromBody]CallbackJob value)
 		{
 			if (ModelState.IsValid)
 			{
@@ -61,33 +63,28 @@ namespace Scheduler.NET.Core.Controllers
 				}
 				else
 				{
-					_jobManager.Update(id, value);
+					_jobManager.Update(value);
 					return Success();
 				}
 			}
 			else
 			{
-				throw new SchedulerException($"Error parameters: {JSON.Serialize(value)}.");
+				throw new SchedulerException($"Error parameters: {GetModelStateError()}.");
 			}
 		}
 
-		[HttpDelete]
-		public IActionResult Remove(string jobId)
+		[HttpDelete("{id}")]
+		public IActionResult Delete(string id)
 		{
-			_jobManager.Remove(jobId);
+			_jobManager.Delete(id);
 			return Success();
 		}
 
-		[HttpPost]
-		public IActionResult Trigger(string jobId)
+		[HttpGet("{id}")]
+		public IActionResult Trigger(string id)
 		{
-			_jobManager.Trigger(jobId);
+			_jobManager.Trigger(id);
 			return Success();
-		}
-
-		public IActionResult ThrowException()
-		{
-			throw new SchedulerException("hello");
 		}
 	}
 }

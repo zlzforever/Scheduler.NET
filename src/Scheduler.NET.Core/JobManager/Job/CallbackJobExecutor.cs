@@ -1,47 +1,50 @@
 ﻿using Jil;
-using NLog;
+using Microsoft.Extensions.Logging;
 using Polly;
 using Polly.Retry;
-using Scheduler.NET.Core.Utils;
 using System;
 using System.Net.Http;
+using Microsoft.Extensions.DependencyInjection;
+using DotnetSpider.Enterprise.Core.Utils;
 
 namespace Scheduler.NET.Core.JobManager.Job
 {
 	/// <summary>
 	/// 
 	/// </summary>
-	public class CallbackJobExecutor : IJobExecutor<CallbackJob>
+	public class CallbackJobExecutor : BaseJobExecutor<CallbackJob>
 	{
-		private readonly static ILogger Logger = LogCenter.GetLogger();
+		private readonly RetryPolicy _retryPolicy;
 
 		/// <summary>
 		/// 重试次数
 		/// </summary>
-		private static int RetryTimes = 5;
+		public static int RetryTimes = 5;
 
-		private readonly static RetryPolicy RetryPolicy = Policy.Handle<HttpRequestException>().Retry(RetryTimes, (ex, count) =>
+		public CallbackJobExecutor() : base()
 		{
-			Logger.Error($"Execute job failed [{count}]: {ex}");
-		});
+			_retryPolicy = Policy.Handle<HttpRequestException>().Retry(RetryTimes, (ex, count) =>
+			{
+				_logger.LogError($"Execute callback job failed [{count}]: {ex}");
+			});
+		}
 
-		public void Execute(CallbackJob job)
+		public override void Execute(CallbackJob job)
 		{
 			try
 			{
-#if Release
-				RetryPolicy.Execute(() =>
+				_retryPolicy.Execute(() =>
 				{
 					var response = HttpUtil.Post(job.Url, job.Data);
 					response.EnsureSuccessStatusCode();
 				});
-#else
-				Logger.Info($"Run callback job {JSON.Serialize(job)}");
-#endif
+
+				_logger.LogInformation($"Execute callback job {JSON.Serialize(job)} success.");
+
 			}
 			catch (Exception e)
 			{
-				Logger.Error($"Execute {JSON.Serialize(job)} failed: {e}");
+				_logger.LogError($"Execute callback job {JSON.Serialize(job)} failed: {e}.");
 			}
 		}
 	}

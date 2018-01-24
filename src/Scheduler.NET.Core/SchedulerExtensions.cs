@@ -10,22 +10,28 @@ using NLog.Extensions.Logging;
 using Scheduler.NET.Core.Filter;
 using Scheduler.NET.Core.JobManager;
 using Scheduler.NET.Core.JobManager.Job;
+using System;
 
 namespace Scheduler.NET.Core
 {
 	public static class SchedulerExtensions
 	{
+		internal static IServiceProvider ServiceProvider;
+
 		/// <summary>
 		/// 必须放在UseMvc前面
 		/// </summary>
 		/// <param name="app"></param>
 		public static void UseScheduler(this IApplicationBuilder app)
 		{
+			ServiceProvider = app.ApplicationServices;
+
 			app.UseHangfireServer();
 			app.UseHangfireDashboard("/hangfire", new DashboardOptions()
 			{
 				Authorization = new[] { new CustomAuthorizeFilter() }
 			});
+
 			var loggerFactory = app.ApplicationServices.GetRequiredService<ILoggerFactory>();
 			loggerFactory.AddConsole(app.ApplicationServices.GetRequiredService<IConfiguration>().GetSection("Logging"));
 			loggerFactory.AddDebug();

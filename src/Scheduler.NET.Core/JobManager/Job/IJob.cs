@@ -10,6 +10,6 @@ namespace Scheduler.NET.Core.JobManager.Job
 
 		string Cron { get; set; }
 
-		object Data { get; set; }
+		string Data { get; set; }
 	}
 }

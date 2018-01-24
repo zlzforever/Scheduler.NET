@@ -6,7 +6,7 @@ namespace Scheduler.NET.Core.JobManager.Job
 	public class CallbackJob : BaseJob
 	{
 		[Required]
-		[StringLength(200)]
+		[Url]
 		public virtual string Url { get; set; }
 	}
 }

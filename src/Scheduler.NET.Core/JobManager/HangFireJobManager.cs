@@ -20,7 +20,7 @@ namespace DotnetSpider.Enterprise.Core.JobManager
 			_logger = loggerFactory.CreateLogger<HangFireCallbackJobManager>();
 		}
 
-		public string Add(T job)
+		public string Create(T job)
 		{
 			try
 			{
@@ -35,31 +35,35 @@ namespace DotnetSpider.Enterprise.Core.JobManager
 			}
 		}
 
-		public void Update(string id, T job)
+		public void Update(T job)
 		{
-			if (string.IsNullOrWhiteSpace(id) || job == null)
+			if (string.IsNullOrWhiteSpace(job.Name) || job == null)
 			{
-				throw new SchedulerException($"{nameof(id)} or {nameof(job)} should not be null.");
+				throw new SchedulerException($"{nameof(job.Name)} or {nameof(job)} should not be null.");
 			}
 			try
 			{
-				if (JobStorage.Current.GetMonitoringApi().JobDetails(id) == null)
+				using (var conn = JobStorage.Current.GetConnection())
 				{
-					throw new SchedulerException($"Job {nameof(id)} unfound.");
+					// 这里是否需要考虑性能
+					if (conn.GetAllEntriesFromHash($"recurring-job:{job.Name}").Count == 0)
+					{
+						throw new SchedulerException($"Job {nameof(job.Name)} unfound.");
+					}
+					_logger.LogInformation($"Update job: {job}.");
+					RecurringJob.AddOrUpdate<E>(job.Name, x => x.Execute(job), job.Cron, TimeZoneInfo.Local);
 				}
-				_logger.LogInformation($"Update job: {job}.");
-				RecurringJob.AddOrUpdate<E>(id, x => x.Execute(job), job.Cron, TimeZoneInfo.Local);
 			}
 			catch (Exception e)
 			{
-				throw new SchedulerException($"Update job failed id: {id}, info: {JSON.Serialize(job)}.", e);
+				throw new SchedulerException($"Update job failed id: {job.Name}, info: {JSON.Serialize(job)}.", e);
 			}
 		}
 
 		/// <summary>
 		/// 删除计划任务
 		/// </summary>
-		public void Remove(string id)
+		public void Delete(string id)
 		{
 			if (string.IsNullOrWhiteSpace(id))
 			{

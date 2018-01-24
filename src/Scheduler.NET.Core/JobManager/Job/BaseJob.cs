@@ -16,7 +16,8 @@ namespace Scheduler.NET.Core.JobManager.Job
 		[StringLength(20)]
 		public virtual string Cron { get; set; }
 
-		public virtual object Data { get; set; }
+		[StringLength(500)]
+		public virtual string Data { get; set; }
 
 		public override string ToString()
 		{

@@ -16,8 +16,7 @@ namespace DotnetSpider.Enterprise.Core.Utils
 
 		public static HttpResponseMessage Post(string url, string data)
 		{
-			var postData = $"data={WebUtility.HtmlEncode(data)}";
-			var content = new StringContent(postData, Encoding.UTF8, HttpContentTypes.ApplicationXWwwFormUrlEncoded);
+			var content = new StringContent(data, Encoding.UTF8, HttpContentTypes.ApplicationJson);
 			return Client.PostAsync(url, content).Result;
 		}
 	}

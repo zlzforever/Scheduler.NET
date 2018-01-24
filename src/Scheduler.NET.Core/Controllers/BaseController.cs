@@ -38,6 +38,18 @@ namespace Scheduler.NET.Core.Controllers
 			return new JsonResult(new StandardResult { Code = 103, Status = Status.Failed, Message = message });
 		}
 
+		protected string GetModelStateError()
+		{
+			foreach (var item in ModelState.Values)
+			{
+				if (item.Errors.Count > 0)
+				{
+					return item.Errors[0].ErrorMessage;
+				}
+			}
+			return "";
+		}
+
 		private bool IsAuth()
 		{
 			if (!_schedulerConfiguration.AuthorizeApi)

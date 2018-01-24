@@ -16,7 +16,6 @@ namespace Scheduler.NET.Portal
 			var builder = new ConfigurationBuilder()
 				.SetBasePath(env.ContentRootPath);
 
-
 			if (env.IsDevelopment())
 			{
 				builder.AddJsonFile("appsettings.Development.json", optional: true, reloadOnChange: true);
@@ -53,7 +52,7 @@ namespace Scheduler.NET.Portal
 			app.UseScheduler();
 
 			app.UseStaticFiles();
-
+			
 			app.UseMvc(routes =>
 			{
 				routes.MapRoute(

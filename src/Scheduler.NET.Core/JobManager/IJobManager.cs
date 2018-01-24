@@ -4,11 +4,11 @@ namespace Scheduler.NET.Core.JobManager
 {
 	public interface IJobManager<T> where T : IJob
 	{
-		string Add(T t);
+		string Create(T job);
 
-		void Update(string id, T t);
+		void Update(T job);
 
-		void Remove(string id);
+		void Delete(string id);
 
 		void Trigger(string id);
 	}
