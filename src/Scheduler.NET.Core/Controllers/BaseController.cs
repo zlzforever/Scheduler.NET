@@ -11,13 +11,13 @@ namespace Scheduler.NET.Core.Controllers
 	{
 		private readonly IJobManager<T> _jobManager;
 		private readonly ISchedulerConfiguration _schedulerConfiguration;
-		protected readonly ILogger _logger;
+		protected readonly ILogger Logger;
 
 		protected BaseController(IJobManager<T> jobManager, ILoggerFactory loggerFactory, ISchedulerConfiguration configuration)
 		{
 			_schedulerConfiguration = configuration;
 			_jobManager = jobManager;
-			_logger = loggerFactory.CreateLogger(GetType());
+			Logger = loggerFactory.CreateLogger(GetType());
 		}
 
 		public override void OnActionExecuting(ActionExecutingContext context)

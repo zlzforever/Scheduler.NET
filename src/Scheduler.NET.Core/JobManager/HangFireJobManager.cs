@@ -1,17 +1,15 @@
-﻿using Hangfire;
+﻿using System;
+using Hangfire;
 using Jil;
 using Microsoft.Extensions.Logging;
-using Scheduler.NET.Core;
-using Scheduler.NET.Core.JobManager;
 using Scheduler.NET.Core.JobManager.Job;
-using System;
 
-namespace DotnetSpider.Enterprise.Core.JobManager
+namespace Scheduler.NET.Core.JobManager
 {
 	/// <summary>
 	/// 调度任务管理器
 	/// </summary>
-	public class HangFireJobManager<T, E> : IJobManager<T> where T : IJob where E : IJobExecutor<T>
+	public class HangFireJobManager<T, TE> : IJobManager<T> where T : IJob where TE : IJobExecutor<T>
 	{
 		private readonly ILogger _logger;
 
@@ -26,7 +24,7 @@ namespace DotnetSpider.Enterprise.Core.JobManager
 			{
 				_logger.LogInformation($"Add job: {job}.");
 				job.Name = string.IsNullOrEmpty(job.Name) ? Guid.NewGuid().ToString("N") : job.Name;
-				RecurringJob.AddOrUpdate<E>(job.Name, x => x.Execute(job), job.Cron, TimeZoneInfo.Local);
+				RecurringJob.AddOrUpdate<TE>(job.Name, x => x.Execute(job), job.Cron, TimeZoneInfo.Local);
 				return job.Name;
 			}
 			catch (SchedulerException)
@@ -56,7 +54,7 @@ namespace DotnetSpider.Enterprise.Core.JobManager
 						throw new SchedulerException($"Job {nameof(job.Name)} unfound.");
 					}
 					_logger.LogInformation($"Update job: {job}.");
-					RecurringJob.AddOrUpdate<E>(job.Name, x => x.Execute(job), job.Cron, TimeZoneInfo.Local);
+					RecurringJob.AddOrUpdate<TE>(job.Name, x => x.Execute(job), job.Cron, TimeZoneInfo.Local);
 				}
 			}
 			catch (SchedulerException)

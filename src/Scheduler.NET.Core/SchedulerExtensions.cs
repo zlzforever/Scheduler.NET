@@ -1,11 +1,8 @@
-﻿using DotnetSpider.Enterprise.Core.JobManager;
-using Hangfire;
-using Hangfire.SqlServer;
+﻿using Hangfire;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
-using NLog;
 using NLog.Extensions.Logging;
 using Scheduler.NET.Core.Filter;
 using Scheduler.NET.Core.JobManager;

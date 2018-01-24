@@ -1,8 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Text;
-
-namespace Scheduler.NET.Core.JobManager.Job
+﻿namespace Scheduler.NET.Core.JobManager.Job
 {
 	public interface IJob
 	{

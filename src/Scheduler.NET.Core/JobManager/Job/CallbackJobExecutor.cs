@@ -4,7 +4,6 @@ using Polly;
 using Polly.Retry;
 using System;
 using System.Net.Http;
-using Microsoft.Extensions.DependencyInjection;
 using DotnetSpider.Enterprise.Core.Utils;
 
 namespace Scheduler.NET.Core.JobManager.Job
@@ -16,11 +15,11 @@ namespace Scheduler.NET.Core.JobManager.Job
 	{
 		private readonly RetryPolicy _retryPolicy;
 
-		public CallbackJobExecutor() : base()
+		public CallbackJobExecutor()
 		{
 			_retryPolicy = Policy.Handle<HttpRequestException>().Retry(RetryTimes, (ex, count) =>
 			{
-				_logger.LogError($"Execute callback job failed [{count}]: {ex}");
+				Logger.LogError($"Execute callback job failed [{count}]: {ex}");
 			});
 		}
 
@@ -34,12 +33,12 @@ namespace Scheduler.NET.Core.JobManager.Job
 					response.EnsureSuccessStatusCode();
 				});
 
-				_logger.LogInformation($"Execute callback job {JSON.Serialize(job)} success.");
+				Logger.LogInformation($"Execute callback job {JSON.Serialize(job)} success.");
 
 			}
 			catch (Exception e)
 			{
-				_logger.LogError($"Execute callback job {JSON.Serialize(job)} failed: {e}.");
+				Logger.LogError($"Execute callback job {JSON.Serialize(job)} failed: {e}.");
 			}
 		}
 	}

@@ -1,5 +1,4 @@
-﻿using Jil;
-using System.ComponentModel.DataAnnotations;
+﻿using System.ComponentModel.DataAnnotations;
 
 namespace Scheduler.NET.Core.JobManager.Job
 {

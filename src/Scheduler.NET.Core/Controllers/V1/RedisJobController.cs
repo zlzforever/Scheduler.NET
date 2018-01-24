@@ -1,8 +1,5 @@
-﻿using Hangfire.Annotations;
-using Jil;
-using Microsoft.AspNetCore.Mvc;
+﻿using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Logging;
-using Newtonsoft.Json;
 using Scheduler.NET.Core.JobManager;
 using Scheduler.NET.Core.JobManager.Job;
 

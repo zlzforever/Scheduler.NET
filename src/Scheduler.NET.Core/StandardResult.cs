@@ -1,8 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Text;
-
-namespace Scheduler.NET.Core
+﻿namespace Scheduler.NET.Core
 {
 	public class StandardResult
 	{
