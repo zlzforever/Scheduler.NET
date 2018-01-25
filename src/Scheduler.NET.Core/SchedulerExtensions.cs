@@ -1,4 +1,5 @@
-﻿using Hangfire;
+﻿using DotnetSpider.Enterprise.Core.JobManager;
+using Hangfire;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
