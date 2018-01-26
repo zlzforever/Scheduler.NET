@@ -22,8 +22,6 @@ namespace Scheduler.NET.Core
 			{
 				info = Jil.JSON.Serialize(new StandardResult { Code = 101, Message = context.Exception.Message, Status = Status.Error });
 
-				_logger.LogError(context.Exception.ToString());
-
 				if (context.Exception.InnerException != null)
 				{
 					_logger.LogError(context.Exception.InnerException.ToString());
