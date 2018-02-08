@@ -1,4 +1,6 @@
-﻿namespace Scheduler.NET.Core
+﻿using System.Collections.Generic;
+
+namespace Scheduler.NET.Core
 {
 	public interface ISchedulerConfiguration
 	{
@@ -6,7 +8,7 @@
 		string HangfireConnectionString { get; set; }
 		string Host { get; set; }
 		bool AuthorizeApi { get; }
-		string[] Tokens { get; }
+		HashSet<string> Tokens { get; }
 		string TokenHeader { get; }
 	}
 }

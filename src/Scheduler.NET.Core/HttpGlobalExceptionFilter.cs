@@ -4,7 +4,6 @@ using System.Text;
 
 namespace Scheduler.NET.Core
 {
-
 	public class HttpGlobalExceptionFilter : IExceptionFilter
 	{
 		private readonly ILogger<HttpGlobalExceptionFilter> _logger;

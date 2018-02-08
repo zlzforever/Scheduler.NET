@@ -1,6 +1,7 @@
 ﻿using System.Net;
 using System.Net.Http;
 using System.Text;
+using System.Threading.Tasks;
 
 namespace DotnetSpider.Enterprise.Core.Utils
 {
@@ -14,10 +15,10 @@ namespace DotnetSpider.Enterprise.Core.Utils
 			UseCookies = false
 		});
 
-		public static HttpResponseMessage Post(string url, string data)
+		public static async Task<HttpResponseMessage> Post(string url, string data)
 		{
 			var content = new StringContent(data, Encoding.UTF8, HttpContentTypes.ApplicationJson);
-			return Client.PostAsync(url, content).Result;
+			return await Client.PostAsync(url, content);
 		}
 	}
 }

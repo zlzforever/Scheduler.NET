@@ -7,7 +7,7 @@ using System.Linq;
 
 namespace Scheduler.NET.Core.Controllers
 {
-	public abstract class BaseController<T> : Controller where T : IJob
+	public abstract class BaseController<T> : Controller where T : BaseJob
 	{
 		private readonly IJobManager<T> _jobManager;
 		private readonly ISchedulerConfiguration _schedulerConfiguration;
@@ -45,15 +45,7 @@ namespace Scheduler.NET.Core.Controllers
 					return Success();
 				}
 				var result = _jobManager.Create(value);
-
-				if (string.IsNullOrEmpty(result))
-				{
-					return Failed("Add job failed.");
-				}
-				else
-				{
-					return Success(result);
-				}
+				return Success(result);
 			}
 			else
 			{

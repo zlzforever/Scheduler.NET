@@ -5,13 +5,14 @@ using Scheduler.NET.Core;
 using Scheduler.NET.Core.JobManager;
 using Scheduler.NET.Core.JobManager.Job;
 using System;
+using System.Linq;
 
 namespace DotnetSpider.Enterprise.Core.JobManager
 {
 	/// <summary>
 	/// 调度任务管理器
 	/// </summary>
-	public class HangFireJobManager<T, E> : IJobManager<T> where T : IJob where E : IJobExecutor<T>
+	public class HangFireJobManager<T, E> : IJobManager<T> where T : BaseJob where E : IJobExecutor<T>
 	{
 		private readonly ILogger _logger;
 
@@ -24,18 +25,14 @@ namespace DotnetSpider.Enterprise.Core.JobManager
 		{
 			try
 			{
-				_logger.LogInformation($"Add job: {job}.");
+				_logger.LogInformation($"Add job {job}.");
 				job.Id = string.IsNullOrEmpty(job.Id) ? Guid.NewGuid().ToString("N") : job.Id;
 				RecurringJob.AddOrUpdate<E>(job.Id, x => x.Execute(job), job.Cron, TimeZoneInfo.Local);
 				return job.Name;
 			}
-			catch (SchedulerException)
-			{
-				throw;
-			}
 			catch (Exception e)
 			{
-				throw new SchedulerException($"Add job failed {JSON.Serialize(job)}.", e);
+				throw new SchedulerException($"Add job {JSON.Serialize(job)} failed.", e);
 			}
 		}
 
@@ -43,19 +40,19 @@ namespace DotnetSpider.Enterprise.Core.JobManager
 		{
 			if (string.IsNullOrWhiteSpace(job.Id) || job == null)
 			{
-				throw new SchedulerException($"{nameof(job.Id)} or {nameof(job)} should not be null.");
+				throw new SchedulerException($"{nameof(job.Id)} or {nameof(job)} must not be null/empty.");
 			}
 			try
 			{
+				_logger.LogInformation($"Update job {job}.");
 				using (var conn = JobStorage.Current.GetConnection())
 				{
 					// 这里是否需要考虑性能
 					var entries = conn.GetAllEntriesFromHash($"recurring-job:{job.Id}");
-					if (entries == null || conn.GetAllEntriesFromHash($"recurring-job:{job.Id}").Count == 0)
+					if (entries == null || conn.GetAllEntriesFromHash($"recurring-job:{job.Id}").Any())
 					{
 						throw new SchedulerException($"Job {nameof(job.Id)} unfound.");
 					}
-					_logger.LogInformation($"Update job: {job}.");
 					RecurringJob.AddOrUpdate<E>(job.Id, x => x.Execute(job), job.Cron, TimeZoneInfo.Local);
 				}
 			}
@@ -76,16 +73,16 @@ namespace DotnetSpider.Enterprise.Core.JobManager
 		{
 			if (string.IsNullOrWhiteSpace(id))
 			{
-				throw new SchedulerException($"{nameof(id)} should not be null.");
+				throw new SchedulerException($"{nameof(id)} must not be null/empty.");
 			}
 			try
 			{
-				_logger.LogInformation($"Remove job: {id}.");
+				_logger.LogInformation($"Remove job {id}.");
 				RecurringJob.RemoveIfExists(id);
 			}
 			catch (Exception e)
 			{
-				throw new SchedulerException($"Remove job failed {id}.", e);
+				throw new SchedulerException($"Remove job {id} failed.", e);
 			}
 		}
 
@@ -102,7 +99,7 @@ namespace DotnetSpider.Enterprise.Core.JobManager
 			}
 			catch (Exception e)
 			{
-				throw new SchedulerException($"Trigger job failed {id}.", e);
+				throw new SchedulerException($"Trigger job {id} failed.", e);
 			}
 		}
 	}

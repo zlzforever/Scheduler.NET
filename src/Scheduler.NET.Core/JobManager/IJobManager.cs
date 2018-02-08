@@ -2,7 +2,7 @@
 
 namespace Scheduler.NET.Core.JobManager
 {
-	public interface IJobManager<in T> where T : IJob
+	public interface IJobManager<in T> where T : BaseJob
 	{
 		string Create(T job);
 

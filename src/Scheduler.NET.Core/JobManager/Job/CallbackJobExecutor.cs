@@ -19,17 +19,17 @@ namespace Scheduler.NET.Core.JobManager.Job
 		{
 			_retryPolicy = Policy.Handle<HttpRequestException>().Retry(RetryTimes, (ex, count) =>
 			{
-				Logger.LogError($"Execute callback job failed [{count}]: {ex}");
+				Logger.LogError($"Execute callback job failed [{count}]: {ex}.");
 			});
 		}
 
-		public override void Execute(CallbackJob job)
+		public override async void Execute(CallbackJob job)
 		{
 			try
 			{
-				_retryPolicy.Execute(() =>
+				await _retryPolicy.Execute(async () =>
 				{
-					var response = HttpUtil.Post(job.Url, job.Data);
+					var response = await HttpUtil.Post(job.Url, job.Data);
 					response.EnsureSuccessStatusCode();
 				});
 
