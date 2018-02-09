@@ -91,12 +91,12 @@ namespace Scheduler.NET.Core.Controllers
 
 		protected IActionResult Success()
 		{
-			return new JsonResult(new StandardResult { Code = 100, Status = Status.Sucess });
+			return new JsonResult(new StandardResult { Code = 100, Status = Status.Success });
 		}
 
 		protected IActionResult Success(object data, string message = null)
 		{
-			return new JsonResult(new StandardResult { Code = 100, Status = Status.Sucess, Data = data, Message = message });
+			return new JsonResult(new StandardResult { Code = 100, Status = Status.Success, Data = data, Message = message });
 		}
 
 		protected IActionResult Failed(string message = null)

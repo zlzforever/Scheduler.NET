@@ -6,7 +6,7 @@ namespace Scheduler.NET.Core
 	[JsonConverter(typeof(StringEnumConverter))]
 	public enum Status
 	{
-		Sucess,
+		Success,
 		Error,
 		Failed
 	}

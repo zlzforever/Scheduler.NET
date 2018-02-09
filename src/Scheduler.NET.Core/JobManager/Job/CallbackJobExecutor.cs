@@ -1,10 +1,10 @@
-﻿using Jil;
-using Microsoft.Extensions.Logging;
+﻿using Microsoft.Extensions.Logging;
 using Polly;
 using Polly.Retry;
 using System;
 using System.Net.Http;
 using DotnetSpider.Enterprise.Core.Utils;
+using Newtonsoft.Json;
 
 namespace Scheduler.NET.Core.JobManager.Job
 {
@@ -33,12 +33,12 @@ namespace Scheduler.NET.Core.JobManager.Job
 					response.EnsureSuccessStatusCode();
 				});
 
-				Logger.LogInformation($"Execute callback job {JSON.Serialize(job)} success.");
+				Logger.LogInformation($"Execute callback job {JsonConvert.SerializeObject(job)} success.");
 
 			}
 			catch (Exception e)
 			{
-				Logger.LogError($"Execute callback job {JSON.Serialize(job)} failed: {e}.");
+				Logger.LogError($"Execute callback job {JsonConvert.SerializeObject(job)} failed: {e}.");
 			}
 		}
 	}

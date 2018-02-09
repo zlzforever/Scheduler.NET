@@ -1,4 +1,4 @@
-﻿using Jil;
+﻿using Newtonsoft.Json;
 using System.ComponentModel.DataAnnotations;
 
 namespace Scheduler.NET.Core.JobManager.Job
@@ -23,7 +23,7 @@ namespace Scheduler.NET.Core.JobManager.Job
 
 		public override string ToString()
 		{
-			return JSON.Serialize(this);
+			return JsonConvert.SerializeObject(this);
 		}
 	}
 }

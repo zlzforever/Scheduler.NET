@@ -1,5 +1,6 @@
 ﻿using Microsoft.AspNetCore.Mvc.Filters;
 using Microsoft.Extensions.Logging;
+using Newtonsoft.Json;
 using System.Text;
 
 namespace Scheduler.NET.Core
@@ -19,7 +20,7 @@ namespace Scheduler.NET.Core
 			string info;
 			if (context.Exception is SchedulerException)
 			{
-				info = Jil.JSON.Serialize(new StandardResult { Code = 101, Message = context.Exception.Message, Status = Status.Error });
+				info = JsonConvert.SerializeObject(new StandardResult { Code = 101, Message = context.Exception.Message, Status = Status.Error });
 
 				if (context.Exception.InnerException != null)
 				{
@@ -29,7 +30,7 @@ namespace Scheduler.NET.Core
 			else
 			{
 				_logger.LogError(context.Exception.ToString());
-				info = Jil.JSON.Serialize(new StandardResult { Code = 102, Message = "Internal error.", Status = Status.Error });
+				info = JsonConvert.SerializeObject(new StandardResult { Code = 102, Message = "Internal error.", Status = Status.Error });
 			}
 			var bytes = Encoding.UTF8.GetBytes(info);
 			context.ExceptionHandled = true;

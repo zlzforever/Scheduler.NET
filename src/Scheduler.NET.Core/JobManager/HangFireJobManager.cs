@@ -1,6 +1,6 @@
 ﻿using Hangfire;
-using Jil;
 using Microsoft.Extensions.Logging;
+using Newtonsoft.Json;
 using Scheduler.NET.Core;
 using Scheduler.NET.Core.JobManager;
 using Scheduler.NET.Core.JobManager.Job;
@@ -32,7 +32,7 @@ namespace DotnetSpider.Enterprise.Core.JobManager
 			}
 			catch (Exception e)
 			{
-				throw new SchedulerException($"Add job {JSON.Serialize(job)} failed.", e);
+				throw new SchedulerException($"Add job {JsonConvert.SerializeObject(job)} failed.", e);
 			}
 		}
 
@@ -49,7 +49,7 @@ namespace DotnetSpider.Enterprise.Core.JobManager
 				{
 					// 这里是否需要考虑性能
 					var entries = conn.GetAllEntriesFromHash($"recurring-job:{job.Id}");
-					if (entries == null || conn.GetAllEntriesFromHash($"recurring-job:{job.Id}").Any())
+					if (entries == null || !conn.GetAllEntriesFromHash($"recurring-job:{job.Id}").Any())
 					{
 						throw new SchedulerException($"Job {nameof(job.Id)} unfound.");
 					}
@@ -62,7 +62,7 @@ namespace DotnetSpider.Enterprise.Core.JobManager
 			}
 			catch (Exception e)
 			{
-				throw new SchedulerException($"Update job failed id: {job.Name}, info: {JSON.Serialize(job)}.", e);
+				throw new SchedulerException($"Update job {JsonConvert.SerializeObject(job)} failed.", e);
 			}
 		}
 

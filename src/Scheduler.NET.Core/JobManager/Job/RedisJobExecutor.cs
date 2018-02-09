@@ -1,5 +1,5 @@
-﻿using Jil;
-using Microsoft.Extensions.Logging;
+﻿using Microsoft.Extensions.Logging;
+using Newtonsoft.Json;
 using Polly;
 using Polly.Retry;
 using StackExchange.Redis;
@@ -38,11 +38,11 @@ namespace Scheduler.NET.Core.JobManager.Job
 				{
 					RedisConnectionCaches[hashCode].GetSubscriber().Publish(job.Chanel, job.Data);
 				});
-				Logger.LogInformation($"Execute redis job {JSON.Serialize(job)} success.");
+				Logger.LogInformation($"Execute redis job {JsonConvert.SerializeObject(job)} success.");
 			}
 			catch (Exception e)
 			{
-				Logger.LogError($"Execute redis job {JSON.Serialize(job)} failed: {e}.");
+				Logger.LogError($"Execute redis job {JsonConvert.SerializeObject(job)} failed: {e}.");
 			}
 		}
 	}
