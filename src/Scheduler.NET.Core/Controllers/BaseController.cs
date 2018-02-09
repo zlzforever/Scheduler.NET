@@ -40,7 +40,7 @@ namespace Scheduler.NET.Core.Controllers
 			if (ModelState.IsValid)
 			{
 				// 这个时间永远不会触发, 表示是手动触发项目
-				if (value.Cron == "* * * * 2999")
+				if (value.Cron.Contains("2999"))
 				{
 					return Success();
 				}
@@ -59,7 +59,7 @@ namespace Scheduler.NET.Core.Controllers
 			if (ModelState.IsValid)
 			{
 				// 这个时间永远不会触发, 表示是手动触发项目
-				if (value.Cron == "* * * * 2999")
+				if (value.Cron.Contains("2999"))
 				{
 					return Success();
 				}

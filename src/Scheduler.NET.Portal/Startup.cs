@@ -52,7 +52,7 @@ namespace Scheduler.NET.Portal
 			app.UseScheduler();
 
 			app.UseStaticFiles();
-			
+
 			app.UseMvc(routes =>
 			{
 				routes.MapRoute(

@@ -23,11 +23,11 @@ namespace Scheduler.NET.Core.JobManager.Job
 			});
 		}
 
-		public override async void Execute(CallbackJob job)
+		public override void Execute(CallbackJob job)
 		{
 			try
 			{
-				await _retryPolicy.Execute(async () =>
+				_retryPolicy.Execute(async () =>
 				{
 					var response = await HttpUtil.Post(job.Url, job.Data);
 					response.EnsureSuccessStatusCode();
