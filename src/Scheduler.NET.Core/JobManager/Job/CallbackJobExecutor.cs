@@ -29,7 +29,7 @@ namespace Scheduler.NET.Core.JobManager.Job
 			{
 				_retryPolicy.Execute(async () =>
 				{
-					var response = await HttpUtil.Post(job.Url, job.Data);
+					var response = await HttpUtil.Get(job.Url);
 					response.EnsureSuccessStatusCode();
 				});
 

@@ -45,16 +45,16 @@ namespace DotnetSpider.Enterprise.Core.JobManager
 			try
 			{
 				_logger.LogInformation($"Update job {job}.");
-				using (var conn = JobStorage.Current.GetConnection())
-				{
-					// 这里是否需要考虑性能
-					var entries = conn.GetAllEntriesFromHash($"recurring-job:{job.Id}");
-					if (entries == null || !conn.GetAllEntriesFromHash($"recurring-job:{job.Id}").Any())
-					{
-						throw new SchedulerException($"Job {nameof(job.Id)} unfound.");
-					}
+				//using (var conn = JobStorage.Current.GetConnection())
+				//{
+				//	// 这里是否需要考虑性能
+				//	var entries = conn.GetAllEntriesFromHash($"recurring-job:{job.Id}");
+				//	if (entries == null || !conn.GetAllEntriesFromHash($"recurring-job:{job.Id}").Any())
+				//	{
+				//		throw new SchedulerException($"Job {nameof(job.Id)} unfound.");
+				//	}
 					RecurringJob.AddOrUpdate<E>(job.Id, x => x.Execute(job), job.Cron, TimeZoneInfo.Local);
-				}
+				//}
 			}
 			catch (SchedulerException)
 			{

@@ -15,10 +15,9 @@ namespace DotnetSpider.Enterprise.Core.Utils
 			UseCookies = false
 		});
 
-		public static async Task<HttpResponseMessage> Post(string url, string data)
+		public static async Task<HttpResponseMessage> Get(string url)
 		{
-			var content = new StringContent(data, Encoding.UTF8, HttpContentTypes.ApplicationJson);
-			return await Client.PostAsync(url, content);
+			return await Client.GetAsync(url);
 		}
 	}
 }
