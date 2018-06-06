@@ -21,17 +21,15 @@ namespace Scheduler.NET.Core
 			if (context.Exception is SchedulerException)
 			{
 				info = JsonConvert.SerializeObject(new StandardResult { Code = 101, Message = context.Exception.Message, Status = Status.Error });
-
-				if (context.Exception.InnerException != null)
-				{
-					_logger.LogError(context.Exception.InnerException.ToString());
-				}
 			}
 			else
 			{
-				_logger.LogError(context.Exception.ToString());
-				info = JsonConvert.SerializeObject(new StandardResult { Code = 102, Message = "Internal error.", Status = Status.Error });
+			
+				info = JsonConvert.SerializeObject(new StandardResult { Code = 102, Message = "internal error", Status = Status.Error });
 			}
+
+			_logger.LogError(context.Exception.ToString());
+
 			var bytes = Encoding.UTF8.GetBytes(info);
 			context.ExceptionHandled = true;
 			context.HttpContext.Response.ContentType = "application/json; charset=utf-8";

@@ -10,16 +10,11 @@ namespace Scheduler.NET.Core.JobManager.Job
 {
 	public class RedisJobExecutor : BaseJobExecutor<RedisJob>
 	{
-		private readonly RetryPolicy _retryPolicy;
 		private static readonly Dictionary<int, ConnectionMultiplexer> RedisConnectionCaches = new Dictionary<int, ConnectionMultiplexer>();
 		private static readonly object RedisConnectionCachesLocker = new object();
 
-		public RedisJobExecutor() : base()
+		public RedisJobExecutor(ILoggerFactory loggerFactory) : base(loggerFactory)
 		{
-			_retryPolicy = Policy.Handle<Exception>().Retry(RetryTimes, (ex, count) =>
-			{
-				Logger.LogError($"Execute redis job failed [{count}]: {ex}.");
-			});
 		}
 
 		public override void Execute(RedisJob job)
@@ -31,10 +26,13 @@ namespace Scheduler.NET.Core.JobManager.Job
 				{
 					if (!RedisConnectionCaches.ContainsKey(hashCode))
 					{
-						RedisConnectionCaches.TryAdd(hashCode, ConnectionMultiplexer.Connect(job.ConnectString));
+						RedisConnectionCaches.Add(hashCode, ConnectionMultiplexer.Connect(job.ConnectString));
 					}
 				}
-				_retryPolicy.Execute(() =>
+				Policy.Handle<Exception>().Retry(RetryTimes, (ex, count) =>
+				{
+					Logger.LogError($"Execute redis job failed [{count}] {JsonConvert.SerializeObject(job)}: {ex}.");
+				}).Execute(() =>
 				{
 					RedisConnectionCaches[hashCode].GetSubscriber().Publish(job.Chanel, job.Data);
 				});

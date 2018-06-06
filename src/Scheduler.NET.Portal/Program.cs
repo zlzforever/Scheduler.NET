@@ -2,9 +2,12 @@
 using System.IO;
 using Microsoft.AspNetCore;
 using Microsoft.AspNetCore.Hosting;
+using Microsoft.Extensions.Configuration;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
 using Scheduler.NET.Core;
+using Serilog;
+using Serilog.Events;
 
 namespace Scheduler.NET.Portal
 {
@@ -12,22 +15,26 @@ namespace Scheduler.NET.Portal
 	{
 		public static void Main(string[] args)
 		{
-#if DEBUG
-			var appsetingsPath = Path.Combine(AppContext.BaseDirectory, "appsettings.Development.json");
-#else
-			var appsetingsPath = Path.Combine(AppContext.BaseDirectory, "appsettings.json");
-#endif
-			var appsetings = JsonConvert.DeserializeObject<JObject>(File.ReadAllText(appsetingsPath)).SelectToken($"$.{SchedulerConfiguration.DefaultSettingKey}").ToObject<SchedulerConfiguration>();
+			var configurationFile = Environment.GetEnvironmentVariable("ASPNETCORE_ENVIRONMENT") == "Development" ?
+							"appsettings.Development.json" : "appsettings.json";
 
-			var url = "http://*:5001";
-			if (!string.IsNullOrEmpty(appsetings.Host) && !string.IsNullOrWhiteSpace(appsetings.Host))
-			{
-				url = appsetings.Host;
-			}
+			Log.Logger = new LoggerConfiguration()
+				.MinimumLevel.Information()
+				.MinimumLevel.Override("Microsoft", LogEventLevel.Warning)
+				.WriteTo.RollingFile(Path.Combine(Directory.GetCurrentDirectory(), "log-{Date}.txt"))
+				.WriteTo.Console()
+				.CreateLogger();
 
-			IWebHost host = WebHost.CreateDefaultBuilder(args)
-				.UseStartup<Startup>().UseUrls(url)
+			Log.Information("Welcome to Scheduler.Net!");
+
+			var config = new ConfigurationBuilder()
+				.SetBasePath(Directory.GetCurrentDirectory())
+				.AddJsonFile(configurationFile, optional: true)
 				.Build();
+
+			var host = WebHost.CreateDefaultBuilder(args).UseConfiguration(config)
+				.UseContentRoot(Directory.GetCurrentDirectory())
+				.UseStartup<Startup>().UseSerilog().Build();
 			host.Run();
 		}
 	}

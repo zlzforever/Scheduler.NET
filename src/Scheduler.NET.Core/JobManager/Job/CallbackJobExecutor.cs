@@ -13,28 +13,24 @@ namespace Scheduler.NET.Core.JobManager.Job
 	/// </summary>
 	public class CallbackJobExecutor : BaseJobExecutor<CallbackJob>
 	{
-		private readonly RetryPolicy _retryPolicy;
-
-		public CallbackJobExecutor()
+		public CallbackJobExecutor(ILoggerFactory loggerFactory) : base(loggerFactory)
 		{
-			_retryPolicy = Policy.Handle<HttpRequestException>().Retry(RetryTimes, (ex, count) =>
-			{
-				Logger.LogError($"Execute callback job failed [{count}]: {ex}.");
-			});
 		}
 
 		public override void Execute(CallbackJob job)
 		{
 			try
 			{
-				_retryPolicy.Execute(async () =>
+				Policy.Handle<HttpRequestException>().Retry(RetryTimes, (ex, count) =>
+				{
+					Logger.LogError($"Execute callback job failed [{count}] {JsonConvert.SerializeObject(job)}: {ex}.");
+				}).Execute(async () =>
 				{
 					var response = await HttpUtil.Get(job.Url);
 					response.EnsureSuccessStatusCode();
 				});
 
 				Logger.LogInformation($"Execute callback job {JsonConvert.SerializeObject(job)} success.");
-
 			}
 			catch (Exception e)
 			{

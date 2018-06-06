@@ -4,6 +4,7 @@ using Microsoft.Extensions.Logging;
 using Scheduler.NET.Core.JobManager;
 using Scheduler.NET.Core.JobManager.Job;
 using System.Linq;
+using System.Text;
 
 namespace Scheduler.NET.Core.Controllers
 {
@@ -106,14 +107,12 @@ namespace Scheduler.NET.Core.Controllers
 
 		protected string GetModelStateError()
 		{
+			StringBuilder builder = new StringBuilder();
 			foreach (var item in ModelState.Values)
 			{
-				if (item.Errors.Count > 0)
-				{
-					return item.Errors[0].ErrorMessage;
-				}
+				builder.Append(string.Join(", ", item.Errors));
 			}
-			return "";
+			return builder.ToString();
 		}
 
 		private bool IsAuth()
