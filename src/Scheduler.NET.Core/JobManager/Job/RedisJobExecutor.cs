@@ -1,7 +1,6 @@
 ﻿using Microsoft.Extensions.Logging;
 using Newtonsoft.Json;
 using Polly;
-using Polly.Retry;
 using StackExchange.Redis;
 using System;
 using System.Collections.Generic;
@@ -22,21 +21,28 @@ namespace Scheduler.NET.Core.JobManager.Job
 			try
 			{
 				var hashCode = job.ConnectString.GetHashCode();
+				ConnectionMultiplexer connectionMultiplexer;
 				lock (RedisConnectionCachesLocker)
 				{
 					if (!RedisConnectionCaches.ContainsKey(hashCode))
 					{
-						RedisConnectionCaches.Add(hashCode, ConnectionMultiplexer.Connect(job.ConnectString));
+						connectionMultiplexer = ConnectionMultiplexer.Connect(job.ConnectString);
+						RedisConnectionCaches.Add(hashCode, connectionMultiplexer);
+					}
+					else
+					{
+						connectionMultiplexer = RedisConnectionCaches[hashCode];
 					}
 				}
+				Logger.LogInformation($"Execute redis job {JsonConvert.SerializeObject(job)}.");
 				Policy.Handle<Exception>().Retry(RetryTimes, (ex, count) =>
 				{
 					Logger.LogError($"Execute redis job failed [{count}] {JsonConvert.SerializeObject(job)}: {ex}.");
 				}).Execute(() =>
 				{
-					RedisConnectionCaches[hashCode].GetSubscriber().Publish(job.Chanel, job.Data);
+					connectionMultiplexer.GetSubscriber().Publish(job.Chanel, job.Data);
 				});
-				Logger.LogInformation($"Execute redis job {JsonConvert.SerializeObject(job)} success.");
+
 			}
 			catch (Exception e)
 			{

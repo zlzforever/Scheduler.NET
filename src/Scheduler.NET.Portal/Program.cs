@@ -3,9 +3,6 @@ using System.IO;
 using Microsoft.AspNetCore;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.Extensions.Configuration;
-using Newtonsoft.Json;
-using Newtonsoft.Json.Linq;
-using Scheduler.NET.Core;
 using Serilog;
 using Serilog.Events;
 
@@ -21,7 +18,7 @@ namespace Scheduler.NET.Portal
 			Log.Logger = new LoggerConfiguration()
 				.MinimumLevel.Information()
 				.MinimumLevel.Override("Microsoft", LogEventLevel.Warning)
-				.WriteTo.RollingFile(Path.Combine(Directory.GetCurrentDirectory(), "log-{Date}.txt"))
+				.WriteTo.RollingFile(Path.Combine(Directory.GetCurrentDirectory(), "{Date}.log"))
 				.WriteTo.Console()
 				.CreateLogger();
 

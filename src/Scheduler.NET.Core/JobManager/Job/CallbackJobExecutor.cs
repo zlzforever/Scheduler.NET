@@ -1,6 +1,5 @@
 ﻿using Microsoft.Extensions.Logging;
 using Polly;
-using Polly.Retry;
 using System;
 using System.Net.Http;
 using DotnetSpider.Enterprise.Core.Utils;
@@ -8,9 +7,7 @@ using Newtonsoft.Json;
 
 namespace Scheduler.NET.Core.JobManager.Job
 {
-	/// <summary>
-	/// 
-	/// </summary>
+	// ReSharper disable once ClassNeverInstantiated.Global
 	public class CallbackJobExecutor : BaseJobExecutor<CallbackJob>
 	{
 		public CallbackJobExecutor(ILoggerFactory loggerFactory) : base(loggerFactory)
@@ -21,6 +18,7 @@ namespace Scheduler.NET.Core.JobManager.Job
 		{
 			try
 			{
+				Logger.LogInformation($"Execute callback job {JsonConvert.SerializeObject(job)}.");
 				Policy.Handle<HttpRequestException>().Retry(RetryTimes, (ex, count) =>
 				{
 					Logger.LogError($"Execute callback job failed [{count}] {JsonConvert.SerializeObject(job)}: {ex}.");
@@ -29,8 +27,6 @@ namespace Scheduler.NET.Core.JobManager.Job
 					var response = await HttpUtil.Get(job.Url);
 					response.EnsureSuccessStatusCode();
 				});
-
-				Logger.LogInformation($"Execute callback job {JsonConvert.SerializeObject(job)} success.");
 			}
 			catch (Exception e)
 			{

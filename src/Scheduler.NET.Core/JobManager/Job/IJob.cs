@@ -9,7 +9,5 @@
 		string Cron { get; set; }
 
 		string Data { get; set; }
-
-		string[] Tags { get; set; }
 	}
 }

@@ -1,9 +1,9 @@
 ﻿using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.Filters;
 using Microsoft.Extensions.Logging;
+using Newtonsoft.Json;
 using Scheduler.NET.Core.JobManager;
 using Scheduler.NET.Core.JobManager.Job;
-using System.Linq;
 using System.Text;
 
 namespace Scheduler.NET.Core.Controllers
@@ -11,12 +11,12 @@ namespace Scheduler.NET.Core.Controllers
 	public abstract class BaseController<T> : Controller where T : BaseJob
 	{
 		private readonly IJobManager<T> _jobManager;
-		private readonly ISchedulerConfiguration _schedulerConfiguration;
+		private readonly ISchedulerOptions _schedulerOptions;
 		protected readonly ILogger Logger;
 
-		protected BaseController(IJobManager<T> jobManager, ILoggerFactory loggerFactory, ISchedulerConfiguration configuration)
+		protected BaseController(IJobManager<T> jobManager, ILoggerFactory loggerFactory, ISchedulerOptions options)
 		{
-			_schedulerConfiguration = configuration;
+			_schedulerOptions = options;
 			_jobManager = jobManager;
 			Logger = loggerFactory.CreateLogger(GetType());
 		}
@@ -40,13 +40,16 @@ namespace Scheduler.NET.Core.Controllers
 		{
 			if (ModelState.IsValid)
 			{
-				// 这个时间永远不会触发, 表示是手动触发项目
-				if (value.Cron.Contains("2999"))
+				if (_schedulerOptions.IgnoreCrons.Contains(value.Cron.Trim()))
 				{
+					Logger.LogInformation($"Ignore job: {JsonConvert.SerializeObject(value)}.");
 					return Success();
 				}
-				var result = _jobManager.Create(value);
-				return Success(result);
+				else
+				{
+					var result = _jobManager.Create(value);
+					return Success(result);
+				}
 			}
 			else
 			{
@@ -59,9 +62,9 @@ namespace Scheduler.NET.Core.Controllers
 		{
 			if (ModelState.IsValid)
 			{
-				// 这个时间永远不会触发, 表示是手动触发项目
-				if (value.Cron.Contains("2999"))
+				if (_schedulerOptions.IgnoreCrons.Contains(value.Cron.Trim()))
 				{
+					Logger.LogInformation($"Ignore job: {JsonConvert.SerializeObject(value)}.");
 					return Success();
 				}
 				else
@@ -95,14 +98,9 @@ namespace Scheduler.NET.Core.Controllers
 			return new JsonResult(new StandardResult { Code = 100, Status = Status.Success });
 		}
 
-		protected IActionResult Success(object data, string message = null)
+		protected IActionResult Success(dynamic data, string message = null)
 		{
 			return new JsonResult(new StandardResult { Code = 100, Status = Status.Success, Data = data, Message = message });
-		}
-
-		protected IActionResult Failed(string message = null)
-		{
-			return new JsonResult(new StandardResult { Code = 103, Status = Status.Failed, Message = message });
 		}
 
 		protected string GetModelStateError()
@@ -117,14 +115,14 @@ namespace Scheduler.NET.Core.Controllers
 
 		private bool IsAuth()
 		{
-			if (!_schedulerConfiguration.AuthorizeApi)
+			if (!_schedulerOptions.UseToken)
 			{
 				return true;
 			}
-			if (Request.Headers.ContainsKey(_schedulerConfiguration.TokenHeader))
+			if (Request.Headers.ContainsKey(_schedulerOptions.TokenHeader))
 			{
-				var token = Request.Headers[_schedulerConfiguration.TokenHeader].ToString();
-				return _schedulerConfiguration.Tokens.Contains(token);
+				var token = Request.Headers[_schedulerOptions.TokenHeader].ToString();
+				return _schedulerOptions.Tokens.Contains(token);
 			}
 			else
 			{

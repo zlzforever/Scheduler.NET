@@ -17,16 +17,7 @@ namespace Scheduler.NET.Core
 		public void OnException(ExceptionContext context)
 		{
 			context.HttpContext.Response.StatusCode = 206;
-			string info;
-			if (context.Exception is SchedulerException)
-			{
-				info = JsonConvert.SerializeObject(new StandardResult { Code = 101, Message = context.Exception.Message, Status = Status.Error });
-			}
-			else
-			{
-			
-				info = JsonConvert.SerializeObject(new StandardResult { Code = 102, Message = "internal error", Status = Status.Error });
-			}
+			var info = JsonConvert.SerializeObject(context.Exception is SchedulerException ? new StandardResult { Code = 101, Message = context.Exception.Message, Status = Status.Error } : new StandardResult { Code = 102, Message = "internal error", Status = Status.Error });
 
 			_logger.LogError(context.Exception.ToString());
 

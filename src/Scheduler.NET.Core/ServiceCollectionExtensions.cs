@@ -1,9 +1,7 @@
-﻿using DotnetSpider.Enterprise.Core.JobManager;
-using Hangfire;
+﻿using Hangfire;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
-using Microsoft.Extensions.Logging;
 using Scheduler.NET.Core.Filter;
 using Scheduler.NET.Core.JobManager;
 using Scheduler.NET.Core.JobManager.Job;
@@ -26,35 +24,51 @@ namespace Scheduler.NET.Core
 			});
 		}
 
-		public static void AddScheduler(this IServiceCollection services, IMvcBuilder builder, IConfiguration configuration)
+		public static IMvcBuilder AddScheduler(this IMvcBuilder builder, Action<ISchedulerOptions> setupAction)
 		{
-			services.AddHttpClient();
+			var schedulerOptions = new SchedulerOptions();
+			setupAction(schedulerOptions);
+
+			builder.Services.AddHttpClient();
 
 			builder.AddMvcOptions(options => options.Filters.Add<HttpGlobalExceptionFilter>());
 
-			var section = configuration.GetSection(SchedulerConfiguration.DefaultSettingKey);
+			builder.Services.AddSingleton<ISchedulerOptions>(schedulerOptions);
 
-			services.Configure<SchedulerConfiguration>(section);
+			builder.Services.AddTransient<IJobManager<CallbackJob>, HangFireCallbackJobManager>();
+			builder.Services.AddTransient<IJobManager<RedisJob>, HangFireRedisJobManager>();
 
-			services.AddTransient<IJobManager<CallbackJob>, HangFireCallbackJobManager>();
-			services.AddTransient<ISchedulerConfiguration, SchedulerConfiguration>();
-			services.AddTransient<IJobManager<RedisJob>, HangFireRedisJobManager>();
-
-			var schedulerConfig = section.Get<SchedulerConfiguration>();
-
-			switch (schedulerConfig.HangfireStorageType.ToLower())
+			switch (schedulerOptions.HangfireStorageType.ToLower())
 			{
 				case "sqlserver":
 					{
-						services.AddHangfire(r => r.UseSqlServerStorage(schedulerConfig.HangfireConnectionString));
+						builder.Services.AddHangfire(r => r.UseSqlServerStorage(schedulerOptions.HangfireConnectionString));
 						break;
 					}
 				case "redis":
 					{
-						services.AddHangfire(r => r.UseRedisStorage(schedulerConfig.HangfireConnectionString));
+						builder.Services.AddHangfire(r => r.UseRedisStorage(schedulerOptions.HangfireConnectionString));
 						break;
 					}
 			}
+
+			return builder;
+		}
+
+		public static IMvcBuilder AddScheduler(this IMvcBuilder builder, IConfiguration configuration)
+		{
+			var section = configuration.GetSection(SchedulerOptions.DefaultSettingKey);
+			var schedulerOptions = section.Get<SchedulerOptions>();
+
+			return builder.AddScheduler(options =>
+			{
+				options.HangfireConnectionString=schedulerOptions.HangfireConnectionString;
+				options.HangfireStorageType = schedulerOptions.HangfireStorageType;
+				options.IgnoreCrons = schedulerOptions.IgnoreCrons;
+				options.TokenHeader = schedulerOptions.TokenHeader;
+				options.Tokens = schedulerOptions.Tokens;
+				options.UseToken = schedulerOptions.UseToken;
+			});
 		}
 
 	}

@@ -19,8 +19,6 @@ namespace Scheduler.NET.Core.JobManager.Job
 		[StringLength(500)]
 		public virtual string Data { get; set; }
 
-		public virtual string[] Tags { get; set; }
-
 		public override string ToString()
 		{
 			return JsonConvert.SerializeObject(this);

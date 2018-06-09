@@ -7,7 +7,6 @@ namespace Scheduler.NET.Core
 	public enum Status
 	{
 		Success,
-		Error,
-		Failed
+		Error
 	}
 }

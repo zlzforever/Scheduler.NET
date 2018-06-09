@@ -1,18 +1,15 @@
-﻿using Hangfire;
+﻿using System;
+using Hangfire;
 using Microsoft.Extensions.Logging;
 using Newtonsoft.Json;
-using Scheduler.NET.Core;
-using Scheduler.NET.Core.JobManager;
 using Scheduler.NET.Core.JobManager.Job;
-using System;
-using System.Linq;
 
-namespace DotnetSpider.Enterprise.Core.JobManager
+namespace Scheduler.NET.Core.JobManager
 {
 	/// <summary>
 	/// 调度任务管理器
 	/// </summary>
-	public class HangFireJobManager<T, E> : IJobManager<T> where T : BaseJob where E : IJobExecutor<T>
+	public class HangFireJobManager<TJob, TJobExecutor> : IJobManager<TJob> where TJob : BaseJob where TJobExecutor : IJobExecutor<TJob>
 	{
 		private readonly ILogger _logger;
 
@@ -21,19 +18,24 @@ namespace DotnetSpider.Enterprise.Core.JobManager
 			_logger = loggerFactory.CreateLogger<HangFireCallbackJobManager>();
 		}
 
-		public string Create(T job)
+		public string Create(TJob job)
 		{
-			_logger.LogInformation($"Add job {job}.");
-			job.Id = string.IsNullOrEmpty(job.Id) ? Guid.NewGuid().ToString("N") : job.Id;
-			RecurringJob.AddOrUpdate<E>(job.Id, x => x.Execute(job), job.Cron, TimeZoneInfo.Local);
-			return job.Name;
+			if (job == null)
+			{
+				_logger.LogError("Can't create null job.");
+				return string.Empty;
+			}
+			_logger.LogInformation($"Create job {job}.");
+			job.Id = string.IsNullOrWhiteSpace(job.Id) ? Guid.NewGuid().ToString("N") : job.Id;
+			RecurringJob.AddOrUpdate<TJobExecutor>(job.Id, x => x.Execute(job), job.Cron, TimeZoneInfo.Local);
+			return job.Id;
 		}
 
-		public void Update(T job)
+		public void Update(TJob job)
 		{
-			if (string.IsNullOrWhiteSpace(job.Id) || job == null)
+			if (job == null || string.IsNullOrWhiteSpace(job.Id))
 			{
-				throw new SchedulerException($"{nameof(job.Id)} or {nameof(job)} must not be null/empty.");
+				throw new SchedulerException($"Can't update job {JsonConvert.SerializeObject(job)}.");
 			}
 			_logger.LogInformation($"Update job {job}.");
 			//using (var conn = JobStorage.Current.GetConnection())
@@ -44,7 +46,7 @@ namespace DotnetSpider.Enterprise.Core.JobManager
 			//	{
 			//		throw new SchedulerException($"Job {nameof(job.Id)} unfound.");
 			//	}
-			RecurringJob.AddOrUpdate<E>(job.Id, x => x.Execute(job), job.Cron, TimeZoneInfo.Local);
+			RecurringJob.AddOrUpdate<TJobExecutor>(job.Id, x => x.Execute(job), job.Cron, TimeZoneInfo.Local);
 			//}
 		}
 
@@ -55,7 +57,7 @@ namespace DotnetSpider.Enterprise.Core.JobManager
 		{
 			if (string.IsNullOrWhiteSpace(id))
 			{
-				_logger.LogInformation($"{nameof(id)} must not be null/empty..");
+				_logger.LogInformation("Cant' delete null job.");
 				return;
 			}
 			_logger.LogInformation($"Remove job {id}.");
@@ -68,25 +70,13 @@ namespace DotnetSpider.Enterprise.Core.JobManager
 		/// <param name="id"></param>
 		public void Trigger(string id)
 		{
+			if (string.IsNullOrWhiteSpace(id))
+			{
+				_logger.LogInformation("Can't trigger null job.");
+				return;
+			}
 			_logger.LogInformation($"Trigger job: {id}.");
 			RecurringJob.Trigger(id);
-		}
-	}
-
-	/// <summary>
-	/// 调度任务管理器
-	/// </summary>
-	public class HangFireCallbackJobManager : HangFireJobManager<CallbackJob, CallbackJobExecutor>
-	{
-		public HangFireCallbackJobManager(ILoggerFactory loggerFactory) : base(loggerFactory)
-		{
-		}
-	}
-
-	public class HangFireRedisJobManager : HangFireJobManager<RedisJob, RedisJobExecutor>
-	{
-		public HangFireRedisJobManager(ILoggerFactory loggerFactory) : base(loggerFactory)
-		{
 		}
 	}
 }
