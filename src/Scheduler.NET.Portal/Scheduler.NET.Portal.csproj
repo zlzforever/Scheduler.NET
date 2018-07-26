@@ -39,7 +39,7 @@
   </ItemGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\Scheduler.NET.Core\Scheduler.NET.Core.csproj" />
+    <ProjectReference Include="..\Scheduler.NET\Scheduler.NET.csproj" />
   </ItemGroup>
 
   <ItemGroup>

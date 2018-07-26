@@ -2,7 +2,7 @@
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
-using Scheduler.NET.Core;
+using Scheduler.NET;
 
 namespace Scheduler.NET.Portal
 {
