@@ -40,7 +40,7 @@ namespace Scheduler.NET.Controllers
 		{
 			if (ModelState.IsValid)
 			{
-				if (_schedulerOptions.IgnoreCrons.Contains(value.Cron.Trim()))
+				if (_schedulerOptions.IgnoreCrons != null && _schedulerOptions.IgnoreCrons.Contains(value.Cron.Trim()))
 				{
 					Logger.LogInformation($"Ignore job: {JsonConvert.SerializeObject(value)}.");
 					return Success();
@@ -62,7 +62,7 @@ namespace Scheduler.NET.Controllers
 		{
 			if (ModelState.IsValid)
 			{
-				if (_schedulerOptions.IgnoreCrons.Contains(value.Cron.Trim()))
+				if (_schedulerOptions.IgnoreCrons != null && _schedulerOptions.IgnoreCrons.Contains(value.Cron.Trim()))
 				{
 					Logger.LogInformation($"Ignore job: {JsonConvert.SerializeObject(value)}.");
 					return Success();
