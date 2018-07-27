@@ -17,6 +17,10 @@ namespace Scheduler.NET
 		/// <param name="app"></param>
 		public static void UseScheduler(this IApplicationBuilder app)
 		{
+			app.UseSignalR(routes =>
+			{
+				routes.MapHub<ClientHub>("/client");
+			});
 			app.UseHangfireServer();
 			app.UseHangfireDashboard("/hangfire", new DashboardOptions()
 			{
@@ -30,11 +34,11 @@ namespace Scheduler.NET
 			setupAction(schedulerOptions);
 
 			builder.Services.AddHttpClient();
+			builder.Services.AddSignalR();
 
 			builder.AddMvcOptions(options => options.Filters.Add<HttpGlobalExceptionFilter>());
 
 			builder.Services.AddSingleton<ISchedulerOptions>(schedulerOptions);
-
 			builder.Services.AddTransient<IJobManager<CallbackJob>, HangFireCallbackJobManager>();
 			builder.Services.AddTransient<IJobManager<RedisJob>, HangFireRedisJobManager>();
 			builder.Services.AddTransient<IJobManager<KafkaJob>, HangFireKafkaJobManager>();

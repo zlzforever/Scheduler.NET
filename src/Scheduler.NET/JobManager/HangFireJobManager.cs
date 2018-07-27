@@ -4,6 +4,7 @@ using Microsoft.Extensions.Logging;
 using Newtonsoft.Json;
 using Scheduler.NET.JobManager.Job;
 using Scheduler.NET.Common;
+using Hangfire.SqlServer;
 
 namespace Scheduler.NET.JobManager
 {

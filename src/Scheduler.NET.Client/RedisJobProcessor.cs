@@ -7,14 +7,14 @@ using System.Text;
 
 namespace Scheduler.NET.Client
 {
-	public abstract class RedisJobRunner : IJobRunner
+	public abstract class RedisJobProcessor : IJobProcessor
 	{
 		private static readonly HashObjectPool<ISubscriber> _pool;
 		private readonly string _connectionString;
 		private readonly string _channel;
 		private ISubscriber _subscriber;
 
-		static RedisJobRunner()
+		static RedisJobProcessor()
 		{
 			_pool = new HashObjectPool<ISubscriber>((item) =>
 			{
@@ -23,7 +23,7 @@ namespace Scheduler.NET.Client
 			});
 		}
 
-		public RedisJobRunner(string connectionString, string channel)
+		public RedisJobProcessor(string connectionString, string channel)
 		{
 			_connectionString = connectionString;
 			_channel = channel;
@@ -33,7 +33,7 @@ namespace Scheduler.NET.Client
 		{
 		}
 
-		public abstract void DoWork(string arguments);
+		public abstract void Process(string arguments);
 
 		[MethodImpl(MethodImplOptions.Synchronized)]
 		public void Start()
@@ -45,7 +45,7 @@ namespace Scheduler.NET.Client
 			_subscriber = _pool.Get(new ObjectKey(_connectionString));
 			_subscriber.Subscribe(_channel, (c, v) =>
 			{
-				DoWork(v);
+				Process(v);
 			});
 		}
 

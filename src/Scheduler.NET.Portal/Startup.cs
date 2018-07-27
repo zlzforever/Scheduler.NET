@@ -33,7 +33,6 @@ namespace Scheduler.NET.Portal
 			{
 				app.UseExceptionHandler("/Home/Error");
 			}
-
 			app.UseScheduler();
 
 			app.UseStaticFiles();

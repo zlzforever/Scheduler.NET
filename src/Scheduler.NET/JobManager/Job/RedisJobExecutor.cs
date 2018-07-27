@@ -36,7 +36,7 @@ namespace Scheduler.NET.JobManager.Job
 					Logger.LogError($"Execute redis job failed [{count}] {JsonConvert.SerializeObject(job)}: {ex}.");
 				}).Execute(() =>
 				{
-					connectionMultiplexer.GetSubscriber().Publish(job.Channel, job.Content);
+					connectionMultiplexer.GetSubscriber().Publish(job.Channel, job.Detail);
 				});
 
 			}

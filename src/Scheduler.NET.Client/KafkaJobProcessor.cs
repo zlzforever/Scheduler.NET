@@ -9,13 +9,13 @@ using System.Threading.Tasks;
 
 namespace Scheduler.NET.Client
 {
-	public abstract class KafkaJobRunner : IJobRunner
+	public abstract class KafkaJobProcessor : IJobProcessor
 	{
 		private Consumer<Null, string> _consumer;
 		private readonly string _connectionString;
 		private readonly string _topic;
 
-		public KafkaJobRunner(string connectionString, string topic)
+		public KafkaJobProcessor(string connectionString, string topic)
 		{
 			_connectionString = connectionString;
 			_topic = topic;
@@ -26,7 +26,7 @@ namespace Scheduler.NET.Client
 			_consumer?.Dispose();
 		}
 
-		public abstract void DoWork(string arguments);
+		public abstract void Process(string arguments);
 
 		[MethodImpl(MethodImplOptions.Synchronized)]
 		public void Start()
@@ -49,7 +49,13 @@ namespace Scheduler.NET.Client
 				=>
 			{
 				Console.WriteLine($"Read '{msg.Value}' from: {msg.TopicPartitionOffset}");
-				DoWork(msg.Value);
+				try
+				{
+					Process(msg.Value);
+				}
+				catch
+				{
+				}
 			};
 
 			_consumer.OnError += (_, error)
