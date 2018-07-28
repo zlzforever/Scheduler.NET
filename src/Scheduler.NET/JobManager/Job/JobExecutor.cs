@@ -6,6 +6,7 @@ using System;
 using System.Data;
 using System.Data.SqlClient;
 using Dapper;
+using Newtonsoft.Json;
 
 namespace Scheduler.NET.JobManager.Job
 {
@@ -60,6 +61,7 @@ namespace Scheduler.NET.JobManager.Job
 
 		public override void Execute(Common.Job job)
 		{
+			Logger.LogInformation($"Execute job {JsonConvert.SerializeObject(job)}.");
 			var batchId = Guid.NewGuid().ToString("N");
 			using (var conn = CreateConnection())
 			{
