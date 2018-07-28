@@ -3,7 +3,7 @@ using Scheduler.NET.Common;
 
 namespace Scheduler.NET.JobManager
 {
-	public interface IJobManager<in T> where T : BaseJob
+	public interface IJobManager<in T> where T : Common.Job
 	{
 		string Create(T job);
 

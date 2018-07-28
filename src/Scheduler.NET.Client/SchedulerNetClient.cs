@@ -1,132 +1,149 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Net.Http;
-using System.Text;
-using Newtonsoft.Json;
+﻿using Microsoft.AspNetCore.SignalR.Client;
 using Scheduler.NET.Common;
+using System;
+using System.Collections.Concurrent;
+using System.Collections.Generic;
+using System.Diagnostics;
+using System.Linq;
+using System.Threading.Tasks;
 
 namespace Scheduler.NET.Client
 {
-	public class SchedulerNetClient : IClient
+	public class SchedulerNETClient
 	{
-		private readonly string _host;
-		private readonly string _version;
-		private static readonly HttpClient httpClient = new HttpClient();
-		private readonly string _token;
+		private readonly Dictionary<string, Type> _classNameMapTypes = new Dictionary<string, Type>();
+		private ConcurrentDictionary<string, object> _runningJobs = new ConcurrentDictionary<string, object>();
 
-		public string TokenHeader { get; set; } = "SchedulerNET";
+		public string Group { get; set; }
+		public string Service { get; set; }
+		public bool BypassRuning { get; set; } = true;
 
-		public SchedulerNetClient(string host, string token = null, string version = "v1.0")
+		public SchedulerNETClient()
 		{
-			_host = new Uri(host).ToString();
-			_version = version;
-			_token = token;
 		}
 
-		public string Create<T>(T job) where T : IJob
+		public SchedulerNETClient(string group, string service) : this()
 		{
-			try
+			Group = group;
+			Service = new Uri(service).ToString();
+		}
+
+		public void Init()
+		{
+			CheckArguments();
+			DetectJobs();
+			if (_classNameMapTypes.Count == 0)
 			{
-				var jobType = typeof(T).Name.ToLower();
-				var url = $"{_host}api/{_version}/{jobType}";
-				var msg = new HttpRequestMessage(HttpMethod.Post, url);
-				AddTokenHeader(msg);
-				job.Id = null;
-				msg.Content = new StringContent(JsonConvert.SerializeObject(job), Encoding.UTF8, "application/json");
-				var response = httpClient.SendAsync(msg).Result;
-				return CheckResult(response);
+				Debug.Print("Detected none job in this application.");
+				return;
 			}
-			catch (SchedulerException)
+			_runningJobs.Clear();
+			RemoteSchedulerNET();
+		}
+
+		private void RemoteSchedulerNET()
+		{
+			var connection = new HubConnectionBuilder()
+									.WithUrl($"{Service}client/?group={Group}")
+									.Build();
+			connection.On<JobContext, string>("Fire", (context, batchId) =>
 			{
-				throw;
-			}
-			catch (Exception e)
+				try
+				{
+					bool shouldFire = false;
+					var className = context?.ClassName;
+					if (string.IsNullOrWhiteSpace(className) || !_classNameMapTypes.ContainsKey(className) || (BypassRuning && _runningJobs.ContainsKey(className)))
+					{
+						return;
+					}
+					if ((context.FireTime - DateTime.Now).TotalSeconds <= 10)
+					{
+						shouldFire = true;
+					}
+					else
+					{
+						Debug.Print("Fire job timeout.");
+					}
+					if (shouldFire)
+					{
+						connection.SendAsync("FireCallback", batchId, context.Id, JobStatus.Running).Wait();
+
+						var jobType = _classNameMapTypes[className];
+						_runningJobs.TryAdd(className, null);
+						Task.Factory.StartNew(() =>
+						{
+							bool success = false;
+							try
+							{
+								var jobObject = (IJobProcessor)Activator.CreateInstance(jobType);
+								success = jobObject.Process(context);
+							}
+							catch
+							{
+								// TODO: LOG
+							}
+							finally
+							{
+								connection.SendAsync("Complete", batchId, context.Id, success).Wait();
+							}
+						}).ContinueWith((t) =>
+						{
+							object j;
+							_runningJobs.TryRemove(className, out j);
+						});
+					}
+					else
+					{
+						connection.SendAsync("FireCallback", batchId, context.Id, JobStatus.Bypass).Wait();
+					}
+				}
+				catch (Exception e)
+				{
+					Debug.Print($"Fire job failed: {e}");
+				}
+			});
+			connection.On<bool>("WatchCallback", (isSuccess) =>
 			{
-				throw new SchedulerException($"Create scheduler failed: {e}");
+				if (!isSuccess)
+				{
+					connection.StopAsync().Wait();
+					connection.DisposeAsync().Wait();
+					throw new SchedulerException("Watch failed.");
+				}
+			});
+			connection.StartAsync().Wait();
+			connection.SendAsync("Watch", _classNameMapTypes.Keys.ToArray()).Wait();
+		}
+
+		private void DetectJobs()
+		{
+			_classNameMapTypes.Clear();
+			var jobProcessorType = typeof(IJobProcessor);
+			var assemblies = AppDomain.CurrentDomain.GetAssemblies();
+			foreach (var assembly in assemblies)
+			{
+				var types = assembly.GetTypes();
+				foreach (var type in types)
+				{
+					if (type.FullName != "Scheduler.NET.Client.SimpleJobProcessor"
+						&& type.FullName != "Scheduler.NET.Client.IJobProcessor"
+						&& jobProcessorType.IsAssignableFrom(type))
+					{
+						_classNameMapTypes.Add(type.FullName, type);
+					}
+				}
 			}
 		}
 
-		public void Delete<T>(string id) where T : IJob
+		private void CheckArguments()
 		{
-			try
+			if (string.IsNullOrWhiteSpace(Group))
 			{
-				var jobType = typeof(T).Name.ToLower();
-				var url = $"{_host}api/{_version}/{jobType}/{id}";
-				var msg = new HttpRequestMessage(HttpMethod.Delete, url);
-				AddTokenHeader(msg);
-				var response = httpClient.SendAsync(msg).Result;
-				CheckResult(response);
+				throw new ArgumentNullException($"{nameof(Group)}");
 			}
-			catch (SchedulerException)
+			if (string.IsNullOrWhiteSpace(Service))
 			{
-				throw;
-			}
-			catch (Exception e)
-			{
-				throw new SchedulerException($"Delete scheduler failed: {e}");
-			}
-		}
-
-		public void Trigger<T>(string id) where T : IJob
-		{
-			try
-			{
-				var jobType = typeof(T).Name.ToLower();
-				var url = $"{_host}api/{_version}/{jobType}/{id}";
-				var msg = new HttpRequestMessage(HttpMethod.Get, url);
-				AddTokenHeader(msg);
-				var response = httpClient.SendAsync(msg).Result;
-				CheckResult(response);
-			}
-			catch (SchedulerException)
-			{
-				throw;
-			}
-			catch (Exception e)
-			{
-				throw new SchedulerException($"Trigger scheduler failed: {e}");
-			}
-		}
-
-		public void Update<T>(T job) where T : IJob
-		{
-			try
-			{
-				var jobType = typeof(T).Name.ToLower();
-				var url = $"{_host}api/{_version}/{jobType}";
-				var msg = new HttpRequestMessage(HttpMethod.Put, url);
-				msg.Content = new StringContent(JsonConvert.SerializeObject(job), Encoding.UTF8, "application/json");
-				AddTokenHeader(msg);
-				var response = httpClient.SendAsync(msg).Result;
-				CheckResult(response);
-			}
-			catch (SchedulerException)
-			{
-				throw;
-			}
-			catch (Exception e)
-			{
-				throw new SchedulerException($"Update scheduler failed: {e}");
-			}
-		}
-
-		private string CheckResult(HttpResponseMessage response)
-		{
-			response.EnsureSuccessStatusCode();
-			var str = response.Content.ReadAsStringAsync().Result;
-			var json = JsonConvert.DeserializeObject<StandardResult>(str);
-			if (json.Status != Status.Success)
-			{
-				throw new SchedulerException(json.Message);
-			}
-			return json.Data?.ToString();
-		}
-
-		private void AddTokenHeader(HttpRequestMessage msg)
-		{
-			if (!string.IsNullOrWhiteSpace(_token))
-			{
-				msg.Headers.Add(TokenHeader, _token);
+				throw new ArgumentNullException($"{nameof(Service)}");
 			}
 		}
 	}

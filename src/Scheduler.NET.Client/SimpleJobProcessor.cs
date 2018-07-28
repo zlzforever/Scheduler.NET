@@ -5,8 +5,8 @@ using System.Text;
 
 namespace Scheduler.NET.Client
 {
-	public interface IJobProcessor
+	public abstract class SimpleJobProcessor : IJobProcessor
 	{
-		bool Process(JobContext context);
+		public abstract bool Process(JobContext context);
 	}
 }

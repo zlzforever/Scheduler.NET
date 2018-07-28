@@ -4,9 +4,8 @@ using System.Text;
 
 namespace Scheduler.NET.Common
 {
-	public class JobContext
+	public class JobContext : Job
 	{
-		public IJob Job { get; set; }
-		public int RetryCount { get; set; }
+		public DateTime FireTime { get; set; }
 	}
 }

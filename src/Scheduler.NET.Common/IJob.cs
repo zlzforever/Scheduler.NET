@@ -18,9 +18,9 @@ namespace Scheduler.NET.Common
 		string Group { get; set; }
 
 		/// <summary>
-		/// 任务名称 
+		/// 任务完整的类名
 		/// </summary>
-		string Name { get; set; }
+		string ClassName { get; set; }
 
 		/// <summary>
 		/// 定时表达式
@@ -30,11 +30,6 @@ namespace Scheduler.NET.Common
 		/// <summary>
 		/// 任务描述
 		/// </summary>
-		string Detail { get; set; }
-
-		/// <summary>
-		/// 是否启用
-		/// </summary>
-		bool IsEnable { get; set; }
+		string Content { get; set; }
 	}
 }

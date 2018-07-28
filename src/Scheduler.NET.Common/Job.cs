@@ -1,12 +1,22 @@
 ﻿using Newtonsoft.Json;
+using System;
 using System.ComponentModel.DataAnnotations;
 
 namespace Scheduler.NET.Common
 {
+	public enum JobStatus
+	{
+		Fire = 0,
+		Running = 1,
+		Success = 2,
+		Failed = 3,
+		Bypass = 4
+	}
+
 	/// <summary>
 	/// 任务抽象
 	/// </summary>
-	public abstract class BaseJob : IJob
+	public class Job : IJob
 	{
 		/// <summary>
 		/// 任务标识
@@ -25,7 +35,7 @@ namespace Scheduler.NET.Common
 		/// </summary>
 		[Required]
 		[StringLength(100)]
-		public virtual string Name { get; set; }
+		public virtual string ClassName { get; set; }
 
 		/// <summary>
 		/// 定时表达式
@@ -35,19 +45,27 @@ namespace Scheduler.NET.Common
 		public virtual string Cron { get; set; }
 
 		/// <summary>
-		/// 任务描述
+		/// 任务描述、内容
 		/// </summary>
 		[StringLength(500)]
-		public virtual string Detail { get; set; }
-
-		/// <summary>
-		/// 是否启用
-		/// </summary>
-		public virtual bool IsEnable { get; set; }
+		public virtual string Content { get; set; }
 
 		public override string ToString()
 		{
 			return JsonConvert.SerializeObject(this);
+		}
+
+		public JobContext ToJobContext()
+		{
+			return new JobContext
+			{
+				Id = Id,
+				ClassName = ClassName,
+				Content = Content,
+				Cron = Cron,
+				FireTime = DateTime.Now,
+				Group = Group
+			};
 		}
 	}
 }

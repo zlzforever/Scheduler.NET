@@ -8,7 +8,7 @@ using System.Text;
 
 namespace Scheduler.NET.Controllers
 {
-	public abstract class BaseController<T> : Controller where T : BaseJob
+	public abstract class BaseController<T> : Controller where T : Job
 	{
 		private readonly IJobManager<T> _jobManager;
 		private readonly ISchedulerOptions _schedulerOptions;
@@ -53,7 +53,7 @@ namespace Scheduler.NET.Controllers
 			}
 			else
 			{
-				throw new SchedulerException($"Error parameters: {GetModelStateError()}.");
+				throw new SchedulerException($"Create job failed: {JsonConvert.SerializeObject(value)}.");
 			}
 		}
 
@@ -75,7 +75,7 @@ namespace Scheduler.NET.Controllers
 			}
 			else
 			{
-				throw new SchedulerException($"Error parameters: {GetModelStateError()}.");
+				throw new SchedulerException($"Update job failed: {JsonConvert.SerializeObject(value)}.");
 			}
 		}
 

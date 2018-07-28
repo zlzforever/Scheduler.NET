@@ -9,7 +9,7 @@ namespace Scheduler.NET.JobManager
 	/// </summary>
 	public class HangFireCallbackJobManager : HangFireJobManager<CallbackJob, CallbackJobExecutor>
 	{
-		public HangFireCallbackJobManager(ILoggerFactory loggerFactory) : base(loggerFactory)
+		public HangFireCallbackJobManager(ILoggerFactory loggerFactory, ISchedulerOptions options) : base(loggerFactory, options)
 		{
 		}
 	}
