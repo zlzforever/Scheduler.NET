@@ -2,6 +2,16 @@
 
   <PropertyGroup>
     <TargetFramework>netstandard2.0</TargetFramework>
+    <PackageRequireLicenseAcceptance>true</PackageRequireLicenseAcceptance>
+    <GeneratePackageOnBuild>true</GeneratePackageOnBuild>
+    <Authors>zlzforever@163.com</Authors>
+    <Company>zlzforever@163.com</Company>
+    <Copyright>Copyright 2018 Lewis Zou</Copyright>
+    <PackageLicenseUrl>https://github.com/zlzforever/Scheduler.NET/blob/master/LICENSE</PackageLicenseUrl>
+    <PackageProjectUrl>https://github.com/zlzforever/Scheduler.NET</PackageProjectUrl>
+    <RepositoryUrl>https://github.com/zlzforever/Scheduler.NET</RepositoryUrl>
+    <PackageTags>Scheduler;Scheduler.NET;</PackageTags>
+    <Version>1.0.3</Version>
   </PropertyGroup>
 
   <ItemGroup>
@@ -12,18 +22,18 @@
 
   <ItemGroup>
     <PackageReference Include="Confluent.Kafka" Version="0.11.5" />
-    <PackageReference Include="Hang.TaskScheduler" Version="2.0.2" />
-    <PackageReference Include="HangFire" Version="1.7.0-beta1" />
-    <PackageReference Include="Hangfire.AspNetCore" Version="1.7.0-beta1" />
+    <PackageReference Include="Hang.TaskScheduler" Version="2.1.0" />
+    <PackageReference Include="HangFire" Version="1.6.19" />
+    <PackageReference Include="Hangfire.AspNetCore" Version="1.6.19" />
     <PackageReference Include="Hangfire.MySql.Core" Version="2.1.5" />
     <PackageReference Include="Hangfire.Redis.StackExchange" Version="1.7.2" />
     <PackageReference Include="Microsoft.AspNetCore.Mvc.ViewFeatures" Version="2.1.0" />
-    <PackageReference Include="Microsoft.AspNetCore.SignalR" Version="1.0.2" />
-    <PackageReference Include="Microsoft.Extensions.Configuration.FileExtensions" Version="2.1.1" />
+    <PackageReference Include="Microsoft.AspNetCore.SignalR" Version="1.0.0" />
+    <PackageReference Include="Microsoft.Extensions.Configuration.FileExtensions" Version="2.1.0" />
     <PackageReference Include="Microsoft.Extensions.Http" Version="2.1.0" />
     <PackageReference Include="Microsoft.Extensions.Logging.Console" Version="2.1.0" />
     <PackageReference Include="Microsoft.Extensions.Logging.Debug" Version="2.1.0" />
-    <PackageReference Include="Polly" Version="6.0.1" />
+    <PackageReference Include="Polly" Version="6.1.0" />
   </ItemGroup>
 
   <ItemGroup>

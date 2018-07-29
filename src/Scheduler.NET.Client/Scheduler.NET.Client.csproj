@@ -2,6 +2,15 @@
 
   <PropertyGroup>
     <TargetFramework>netstandard2.0</TargetFramework>
+    <GeneratePackageOnBuild>true</GeneratePackageOnBuild>
+    <PackageRequireLicenseAcceptance>true</PackageRequireLicenseAcceptance>
+    <PackageLicenseUrl>https://github.com/zlzforever/Scheduler.NET/blob/master/LICENSE</PackageLicenseUrl>
+    <Authors>zlzforever@163.com</Authors>
+    <Company>zlzforever@163.com</Company>
+    <Copyright>Copyright 2018 Lewis Zou</Copyright>
+    <PackageProjectUrl>https://github.com/zlzforever/Scheduler.NET</PackageProjectUrl>
+    <RepositoryUrl>https://github.com/zlzforever/Scheduler.NET</RepositoryUrl>
+    <PackageTags>Scheduler;Scheduler.NET;</PackageTags>
   </PropertyGroup>
 
   <ItemGroup>

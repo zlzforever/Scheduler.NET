@@ -1,10 +1,8 @@
 ﻿using System;
 using Hangfire;
 using Microsoft.Extensions.Logging;
-using Newtonsoft.Json;
 using Scheduler.NET.JobManager.Job;
 using Scheduler.NET.Common;
-using Hangfire.SqlServer;
 using System.Data;
 using System.Data.SqlClient;
 using MySql.Data.MySqlClient;
@@ -22,7 +20,7 @@ namespace Scheduler.NET.JobManager
 	/// <summary>
 	/// 调度任务管理器
 	/// </summary>
-	public class HangFireJobManager<TJob, TJobExecutor> : IJobManager<TJob> where TJob : Common.Job where TJobExecutor : IJobExecutor<TJob>
+	public class HangFireJobManager<TJob, TJobExecutor> : IJobManager<TJob> where TJob : IJob where TJobExecutor : IJobExecutor<TJob>
 	{
 		private readonly ILogger _logger;
 		private readonly ISchedulerOptions _options;
@@ -94,19 +92,15 @@ namespace Scheduler.NET.JobManager
 		{
 			if (job == null)
 			{
-				_logger.LogError("Can't create null job.");
-				return string.Empty;
+				throw new ArgumentNullException($"{nameof(job)}");
 			}
-			_logger.LogInformation($"Create job {job}.");
+			_logger.LogInformation($"Create {job}.");
 			job.Id = string.IsNullOrWhiteSpace(job.Id) ? Guid.NewGuid().ToString("N") : job.Id;
 			using (var conn = CreateConnection())
 			{
-				if (conn != null)
-				{
-					conn.Execute(
-$"INSERT INTO scheduler_job(id,{GetGroupSql()},classname,cron,content,creationtime,lastmodificationtime) values (@Id,@Group,@ClassName,@Cron,@Content,{GetTimeSql()},{GetTimeSql()})",
-						job);
-				}
+				conn?.Execute(
+					$"INSERT INTO scheduler_job(id,{GetGroupSql()},classname,cron,content,creationtime,lastmodificationtime) values (@Id,@Group,@ClassName,@Cron,@Content,{GetTimeSql()},{GetTimeSql()})",
+					job);
 			}
 
 			RecurringJob.AddOrUpdate<TJobExecutor>(job.Id, x => x.Execute(job), job.Cron, TimeZoneInfo.Local);
@@ -116,21 +110,22 @@ $"INSERT INTO scheduler_job(id,{GetGroupSql()},classname,cron,content,creationti
 
 		public void Update(TJob job)
 		{
-			if (job == null || string.IsNullOrWhiteSpace(job.Id))
+			if (job == null)
 			{
-				throw new SchedulerException($"Can't update job {JsonConvert.SerializeObject(job)}.");
+				throw new ArgumentNullException($"{nameof(job)}");
 			}
-			_logger.LogInformation($"Update job {job}.");
-			RecurringJob.AddOrUpdate<TJobExecutor>(job.Id, x => x.Execute(job), job.Cron, TimeZoneInfo.Local);
+			if (string.IsNullOrWhiteSpace(job.Id))
+			{
+				throw new ArgumentNullException($"{nameof(job.Id)}");
+			}
+			_logger.LogInformation($"Update {job}.");
 			using (var conn = CreateConnection())
 			{
-				if (conn != null)
-				{
-					conn.Execute(
-					$"UPDATE job SET {GetGroupSql()} = @Group, classname=@ClassName, cron=@Cron, content=@Content, lastmodificationtime={GetTimeSql()} where id=@Id",
+				conn?.Execute(
+					$"UPDATE job SET {GetGroupSql()}=@Group, classname=@ClassName, cron=@Cron, content=@Content, lastmodificationtime={GetTimeSql()} WHERE id=@Id",
 					job);
-				}
 			}
+			RecurringJob.AddOrUpdate<TJobExecutor>(job.Id, x => x.Execute(job), job.Cron, TimeZoneInfo.Local);
 		}
 
 		/// <summary>
@@ -140,33 +135,28 @@ $"INSERT INTO scheduler_job(id,{GetGroupSql()},classname,cron,content,creationti
 		{
 			if (string.IsNullOrWhiteSpace(id))
 			{
-				_logger.LogInformation("Cant' delete null job.");
-				return;
+				throw new ArgumentNullException($"{nameof(id)}");
 			}
-			_logger.LogInformation($"Remove job {id}.");
-			RecurringJob.RemoveIfExists(id);
+			_logger.LogInformation($"Remove {id}.");
 			using (var conn = CreateConnection())
 			{
-				if (conn != null)
-				{
-					conn.Execute(
+				conn?.Execute(
 					"DELETE FROM job WHERE id=@Id", new { Id = id });
-				}
 			}
+			RecurringJob.RemoveIfExists(id);
 		}
 
 		/// <summary>
 		/// 触发任务
 		/// </summary>
 		/// <param name="id"></param>
-		public void Trigger(string id)
+		public void Fire(string id)
 		{
 			if (string.IsNullOrWhiteSpace(id))
 			{
-				_logger.LogInformation("Can't trigger null job.");
-				return;
+				throw new ArgumentNullException($"{nameof(id)}");
 			}
-			_logger.LogInformation($"Trigger job: {id}.");
+			_logger.LogInformation($"Trigger {id}.");
 			RecurringJob.Trigger(id);
 		}
 	}

@@ -2,8 +2,6 @@
 using Microsoft.AspNetCore.SignalR;
 using System;
 using System.Collections.Generic;
-using System.Collections.Concurrent;
-using System.Text;
 using System.Threading.Tasks;
 using Scheduler.NET.Common;
 using System.Data;
@@ -54,8 +52,7 @@ namespace Scheduler.NET
 			}
 			else
 			{
-				HashSet<string> oldValue;
-				if (ClientCache.ConnectionMapClassNames.TryGetValue(Context.ConnectionId, out oldValue))
+				if (ClientCache.ConnectionMapClassNames.TryGetValue(Context.ConnectionId, out var oldValue))
 				{
 					cacheClassNames = ClientCache.ConnectionMapClassNames.TryUpdate(Context.ConnectionId, new HashSet<string>(classNames), oldValue);
 				}

@@ -6,12 +6,13 @@ using Scheduler.NET.Filter;
 using Scheduler.NET.JobManager;
 using Scheduler.NET.Common;
 using System;
-using Hangfire.MySql;
 using Hangfire.MySql.Core;
 using System.Data;
 using System.Data.SqlClient;
 using Dapper;
 using MySql.Data.MySqlClient;
+using Hangfire.SqlServer;
+using Hangfire.Redis;
 
 namespace Scheduler.NET
 {
@@ -21,7 +22,7 @@ namespace Scheduler.NET
 		/// 必须放在UseMvc前面
 		/// </summary>
 		/// <param name="app"></param>
-		public static void UseScheduler(this IApplicationBuilder app)
+		public static void UseSchedulerNet(this IApplicationBuilder app)
 		{
 			app.UseSignalR(routes =>
 			{
@@ -34,7 +35,7 @@ namespace Scheduler.NET
 			});
 		}
 
-		public static IMvcBuilder AddScheduler(this IMvcBuilder builder, Action<ISchedulerOptions> setupAction)
+		public static IMvcBuilder AddSchedulerNet(this IMvcBuilder builder, Action<ISchedulerOptions> setupAction)
 		{
 			var schedulerOptions = new SchedulerOptions();
 			setupAction(schedulerOptions);
@@ -47,17 +48,17 @@ namespace Scheduler.NET
 			builder.Services.AddSingleton<ISchedulerOptions>(schedulerOptions);
 			builder.Services.AddTransient<IJobManager<CallbackJob>, HangFireCallbackJobManager>();
 			builder.Services.AddTransient<IJobManager<Job>, HangFireJobManager>();
-
+			builder.Services.AddHangfire(config=> { });
 			switch (schedulerOptions.HangfireStorageType.ToLower())
 			{
 				case "sqlserver":
 					{
-						builder.Services.AddHangfire(r => r.UseSqlServerStorage(schedulerOptions.HangfireConnectionString));
+						GlobalConfiguration.Configuration.UseStorage(new SqlServerStorage(schedulerOptions.HangfireConnectionString));
 						break;
 					}
 				case "redis":
 					{
-						builder.Services.AddHangfire(r => r.UseRedisStorage(schedulerOptions.HangfireConnectionString));
+						GlobalConfiguration.Configuration.UseStorage(new RedisStorage(schedulerOptions.HangfireConnectionString));
 						break;
 					}
 				case "mysql":
@@ -69,7 +70,7 @@ namespace Scheduler.NET
 								new MySqlStorageOptions
 								{
 									TransactionIsolationLevel = IsolationLevel.ReadCommitted,
-									QueuePollInterval = TimeSpan.FromSeconds(5),
+									QueuePollInterval = TimeSpan.FromSeconds(2),
 									JobExpirationCheckInterval = TimeSpan.FromHours(1),
 									CountersAggregateInterval = TimeSpan.FromMinutes(5),
 									PrepareSchemaIfNecessary = true,
@@ -84,12 +85,12 @@ namespace Scheduler.NET
 			return builder;
 		}
 
-		public static IMvcBuilder AddScheduler(this IMvcBuilder builder, IConfiguration configuration)
+		public static IMvcBuilder AddSchedulerNet(this IMvcBuilder builder, IConfiguration configuration)
 		{
 			var section = configuration.GetSection(SchedulerOptions.DefaultSettingKey);
 			var schedulerOptions = section.Get<SchedulerOptions>();
 
-			return builder.AddScheduler(options =>
+			return builder.AddSchedulerNet(options =>
 			{
 				options.HangfireConnectionString = schedulerOptions.HangfireConnectionString;
 				options.HangfireStorageType = schedulerOptions.HangfireStorageType;
@@ -172,12 +173,7 @@ namespace Scheduler.NET
 						}
 						break;
 					}
-				default:
-					{
-						break;
-					}
 			}
 		}
-
 	}
 }

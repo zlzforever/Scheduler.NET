@@ -61,8 +61,8 @@ namespace Scheduler.NET.JobManager.Job
 
 		public override void Execute(Common.Job job)
 		{
-			Logger.LogInformation($"Execute job {JsonConvert.SerializeObject(job)}.");
 			var batchId = Guid.NewGuid().ToString("N");
+			Logger.LogInformation($"Execute job {JsonConvert.SerializeObject(job)}, batch {batchId}.");
 			using (var conn = CreateConnection())
 			{
 				conn.Execute($"INSERT INTO scheduler_job_history (batchid, jobid, status,creationtime,lastmodificationtime) values (@BatchId,@JobId,@Status,{GetTimeSql()},{GetTimeSql()})",

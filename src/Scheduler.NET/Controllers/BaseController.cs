@@ -4,14 +4,14 @@ using Microsoft.Extensions.Logging;
 using Newtonsoft.Json;
 using Scheduler.NET.JobManager;
 using Scheduler.NET.Common;
-using System.Text;
 
 namespace Scheduler.NET.Controllers
 {
-	public abstract class BaseController<T> : Controller where T : Job
+	public abstract class BaseController<T> : Controller where T : IJob
 	{
 		private readonly IJobManager<T> _jobManager;
 		private readonly ISchedulerOptions _schedulerOptions;
+		
 		protected readonly ILogger Logger;
 
 		protected BaseController(IJobManager<T> jobManager, ILoggerFactory loggerFactory, ISchedulerOptions options)
@@ -25,7 +25,7 @@ namespace Scheduler.NET.Controllers
 		{
 			if (!IsAuth())
 			{
-				throw new SchedulerException("Auth dined.");
+				throw new SchedulerNetException("Auth dined.");
 			}
 
 			base.OnActionExecuting(context);
@@ -53,7 +53,7 @@ namespace Scheduler.NET.Controllers
 			}
 			else
 			{
-				throw new SchedulerException($"Create job failed: {JsonConvert.SerializeObject(value)}.");
+				throw new SchedulerNetException($"Create job failed: {JsonConvert.SerializeObject(value)}.");
 			}
 		}
 
@@ -75,7 +75,7 @@ namespace Scheduler.NET.Controllers
 			}
 			else
 			{
-				throw new SchedulerException($"Update job failed: {JsonConvert.SerializeObject(value)}.");
+				throw new SchedulerNetException($"Update job failed: {JsonConvert.SerializeObject(value)}.");
 			}
 		}
 
@@ -87,30 +87,20 @@ namespace Scheduler.NET.Controllers
 		}
 
 		[HttpGet("{id}")]
-		public IActionResult Trigger(string id)
+		public IActionResult Fire(string id)
 		{
-			_jobManager.Trigger(id);
+			_jobManager.Fire(id);
 			return Success();
 		}
 
 		protected IActionResult Success()
 		{
-			return new JsonResult(new StandardResult { Code = 100, Status = Status.Success });
+			return new JsonResult(new StandardResult { Code = 100, Success = true });
 		}
 
 		protected IActionResult Success(dynamic data, string message = null)
 		{
-			return new JsonResult(new StandardResult { Code = 100, Status = Status.Success, Data = data, Message = message });
-		}
-
-		protected string GetModelStateError()
-		{
-			StringBuilder builder = new StringBuilder();
-			foreach (var item in ModelState.Values)
-			{
-				builder.Append(string.Join(", ", item.Errors));
-			}
-			return builder.ToString();
+			return new JsonResult(new StandardResult { Code = 100, Success = true, Data = data, Message = message });
 		}
 
 		private bool IsAuth()

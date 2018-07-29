@@ -1,8 +1,5 @@
 ﻿using Microsoft.AspNetCore.SignalR;
 using Scheduler.NET.Common;
-using System;
-using System.Collections.Generic;
-using System.Text;
 
 namespace Scheduler.NET
 {
@@ -10,15 +7,12 @@ namespace Scheduler.NET
 	{
 		public static void Fire(this IHubContext<ClientHub> hubContext, Job job, string batchId)
 		{
-			var jobContext = job.ToJobContext();
-			HashSet<string> connections;
-			if (ClientCache.GroupMapConnections.TryGetValue(jobContext.Group, out connections))
+			var jobContext = job.ToContext();
+			if (ClientCache.GroupMapConnections.TryGetValue(jobContext.Group, out var connections))
 			{
 				foreach (var connection in connections)
 				{
-					HashSet<string> classNames;
-
-					if (ClientCache.ConnectionMapClassNames.TryGetValue(connection, out classNames))
+					if (ClientCache.ConnectionMapClassNames.TryGetValue(connection, out var classNames))
 					{
 						if (classNames.Contains(jobContext.ClassName))
 						{
@@ -29,7 +23,7 @@ namespace Scheduler.NET
 			}
 			else
 			{
-				// TODO: LOG
+				throw new SchedulerNetException("None client connected.");
 			}
 		}
 	}

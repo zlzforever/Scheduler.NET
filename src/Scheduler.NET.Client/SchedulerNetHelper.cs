@@ -1,5 +1,4 @@
 ﻿using System;
-using System.Collections.Generic;
 using System.Net.Http;
 using System.Text;
 using Newtonsoft.Json;
@@ -7,107 +6,91 @@ using Scheduler.NET.Common;
 
 namespace Scheduler.NET.Client
 {
-	public class SchedulerNETHelper
+	public class SchedulerNetHelper
 	{
+		private static readonly HttpClient HttpClient = new HttpClient();
 		private readonly string _host;
 		private readonly string _version;
-		private static readonly HttpClient httpClient = new HttpClient();
 		private readonly string _token;
 
 		public string TokenHeader { get; set; } = "SchedulerNET";
 
-		public SchedulerNETHelper(string host, string token = null, string version = "v1.0")
+		public SchedulerNetHelper(string host, string token = null, string version = "v1.0")
 		{
 			_host = new Uri(host).ToString();
 			_version = version;
 			_token = token;
 		}
 
-		public string Create<T>(T job) where T : IJob
+		public string CreateJob(Job job)
 		{
-			try
-			{
-				var jobType = typeof(T).Name.ToLower();
-				var url = $"{_host}api/{_version}/{jobType}";
-				var msg = new HttpRequestMessage(HttpMethod.Post, url);
-				AddTokenHeader(msg);
-				job.Id = null;
-				msg.Content = new StringContent(JsonConvert.SerializeObject(job), Encoding.UTF8, "application/json");
-				var response = httpClient.SendAsync(msg).Result;
-				return CheckResult(response);
-			}
-			catch (SchedulerException)
-			{
-				throw;
-			}
-			catch (Exception e)
-			{
-				throw new SchedulerException($"Create scheduler failed: {e}");
-			}
+			return Create("job", job);
 		}
 
-		public void Delete<T>(string id) where T : IJob
+		public string CreateCallbackJob(CallbackJob job)
 		{
-			try
-			{
-				var jobType = typeof(T).Name.ToLower();
-				var url = $"{_host}api/{_version}/{jobType}/{id}";
-				var msg = new HttpRequestMessage(HttpMethod.Delete, url);
-				AddTokenHeader(msg);
-				var response = httpClient.SendAsync(msg).Result;
-				CheckResult(response);
-			}
-			catch (SchedulerException)
-			{
-				throw;
-			}
-			catch (Exception e)
-			{
-				throw new SchedulerException($"Delete scheduler failed: {e}");
-			}
+			return Create("callbackjob", job);
 		}
 
-		public void Trigger<T>(string id) where T : IJob
+		public void UpdateJob(Job job)
 		{
-			try
-			{
-				var jobType = typeof(T).Name.ToLower();
-				var url = $"{_host}api/{_version}/{jobType}/{id}";
-				var msg = new HttpRequestMessage(HttpMethod.Get, url);
-				AddTokenHeader(msg);
-				var response = httpClient.SendAsync(msg).Result;
-				CheckResult(response);
-			}
-			catch (SchedulerException)
-			{
-				throw;
-			}
-			catch (Exception e)
-			{
-				throw new SchedulerException($"Trigger scheduler failed: {e}");
-			}
+			Update("job", job);
 		}
 
-		public void Update<T>(T job) where T : IJob
+		public void UpdateCallbackJob(CallbackJob job)
 		{
-			try
+			Update("callbackjob", job);
+		}
+
+		public void Delete(string jobType, string id)
+		{
+			var url = $"{_host}api/{_version}/{jobType}/{id}";
+			var msg = new HttpRequestMessage(HttpMethod.Delete, url);
+			AddTokenHeader(msg);
+			var response = HttpClient.SendAsync(msg).Result;
+			CheckResult(response);
+		}
+
+		public void FireJob(string id)
+		{
+			Fire("job", id);
+		}
+
+		public void FireCallbackJob(string id)
+		{
+			Fire("callbackjob", id);
+		}
+
+		private string Create(string jobType, IJob job)
+		{
+			var url = $"{_host}api/{_version}/{jobType}";
+			var msg = new HttpRequestMessage(HttpMethod.Post, url);
+			AddTokenHeader(msg);
+			job.Id = null;
+			msg.Content = new StringContent(JsonConvert.SerializeObject(job), Encoding.UTF8, "application/json");
+			var response = HttpClient.SendAsync(msg).Result;
+			return CheckResult(response);
+		}
+
+		private void Fire(string jobType, string id)
+		{
+			var url = $"{_host}api/{_version}/{jobType}/{id}";
+			var msg = new HttpRequestMessage(HttpMethod.Get, url);
+			AddTokenHeader(msg);
+			var response = HttpClient.SendAsync(msg).Result;
+			CheckResult(response);
+		}
+
+		private void Update(string jobType, IJob job)
+		{
+			var url = $"{_host}api/{_version}/{jobType}";
+			var msg = new HttpRequestMessage(HttpMethod.Put, url)
 			{
-				var jobType = typeof(T).Name.ToLower();
-				var url = $"{_host}api/{_version}/{jobType}";
-				var msg = new HttpRequestMessage(HttpMethod.Put, url);
-				msg.Content = new StringContent(JsonConvert.SerializeObject(job), Encoding.UTF8, "application/json");
-				AddTokenHeader(msg);
-				var response = httpClient.SendAsync(msg).Result;
-				CheckResult(response);
-			}
-			catch (SchedulerException)
-			{
-				throw;
-			}
-			catch (Exception e)
-			{
-				throw new SchedulerException($"Update scheduler failed: {e}");
-			}
+				Content = new StringContent(JsonConvert.SerializeObject(job), Encoding.UTF8, "application/json")
+			};
+			AddTokenHeader(msg);
+			var response = HttpClient.SendAsync(msg).Result;
+			CheckResult(response);
 		}
 
 		private string CheckResult(HttpResponseMessage response)
@@ -115,9 +98,9 @@ namespace Scheduler.NET.Client
 			response.EnsureSuccessStatusCode();
 			var str = response.Content.ReadAsStringAsync().Result;
 			var json = JsonConvert.DeserializeObject<StandardResult>(str);
-			if (json.Status != Status.Success)
+			if (!json.Success)
 			{
-				throw new SchedulerException(json.Message);
+				throw new SchedulerNetException(json.Message);
 			}
 			return json.Data?.ToString();
 		}

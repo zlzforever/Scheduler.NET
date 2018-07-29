@@ -5,7 +5,6 @@ using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.Linq;
-using System.Net.Http;
 using System.Net.Sockets;
 using System.Net.WebSockets;
 using System.Threading;
@@ -13,44 +12,67 @@ using System.Threading.Tasks;
 
 namespace Scheduler.NET.Client
 {
-	public class SchedulerNETClient
+	public class SchedulerNetClient
 	{
 		private readonly Dictionary<string, Type> _classNameMapTypes = new Dictionary<string, Type>();
-		private ConcurrentDictionary<string, object> _runningJobs = new ConcurrentDictionary<string, object>();
+		private readonly ConcurrentDictionary<string, object> _runningJobs = new ConcurrentDictionary<string, object>();
 		private int _retryTimes;
 
+		/// <summary>
+		/// 任务分组
+		/// </summary>
 		public string Group { get; set; }
+
+		/// <summary>
+		/// Scheduler.NET 服务地址
+		/// </summary>
 		public string Service { get; set; }
-		public bool BypassRuning { get; set; } = true;
+
+		/// <summary>
+		/// 是否忽略正在运行的任务
+		/// </summary>
+		public bool BypassRunning { get; set; } = true;
+
+		/// <summary>
+		/// 服务连接重试次数
+		/// </summary>
 		public int RetryTimes { get; set; } = 3600;
 
-		public SchedulerNETClient()
+		/// <summary>
+		/// 构造方法
+		/// </summary>
+		public SchedulerNetClient()
 		{
 		}
 
-		public SchedulerNETClient(string group, string service) : this()
+		/// <summary>
+		/// 构造方法
+		/// </summary>
+		/// <param name="group">任务分组</param>
+		/// <param name="service">Scheduler.NET 服务地址</param>
+		public SchedulerNetClient(string group, string service) : this()
 		{
 			Group = group;
 			Service = new Uri(service).ToString();
 		}
 
+		/// <summary>
+		/// 初始化并启动
+		/// </summary>
 		public void Init()
 		{
 			CheckArguments();
-			DetectJobs();
+			ScanAssemblies();
 			if (_classNameMapTypes.Count == 0)
 			{
-				Debug.Print("Detected none job in this application.");
+				Debug.WriteLine("Detected none job in this application.");
 				return;
 			}
 			_runningJobs.Clear();
-
-
-			RemoteSchedulerNET();
-
+			ConnectSchedulerNet();
 		}
 
-		private void RemoteSchedulerNET()
+		private void ConnectSchedulerNet()
 		{
 			try
 			{
@@ -61,17 +83,17 @@ namespace Scheduler.NET.Client
 				{
 					if (e == null || ((WebSocketException)e).WebSocketErrorCode == WebSocketError.ConnectionClosedPrematurely)
 					{
-						RemoteSchedulerNET();
+						ConnectSchedulerNet();
 					}
 					return Task.CompletedTask;
 				};
 				connection.On<JobContext, string>("Fire", (context, batchId) =>
 				{
+					var className = context?.ClassName;
 					try
 					{
 						bool shouldFire = false;
-						var className = context?.ClassName;
-						if (string.IsNullOrWhiteSpace(className) || !_classNameMapTypes.ContainsKey(className) || (BypassRuning && _runningJobs.ContainsKey(className)))
+						if (string.IsNullOrWhiteSpace(className) || !_classNameMapTypes.ContainsKey(className) || (BypassRunning && _runningJobs.ContainsKey(className)))
 						{
 							return;
 						}
@@ -81,7 +103,7 @@ namespace Scheduler.NET.Client
 						}
 						else
 						{
-							Debug.Print("Fire job timeout.");
+							Debug.WriteLine($"Fire job timeout: {className}.");
 						}
 						if (shouldFire)
 						{
@@ -107,8 +129,7 @@ namespace Scheduler.NET.Client
 								}
 							}).ContinueWith((t) =>
 							{
-								object j;
-								_runningJobs.TryRemove(className, out j);
+								_runningJobs.TryRemove(className, out _);
 							});
 						}
 						else
@@ -118,7 +139,7 @@ namespace Scheduler.NET.Client
 					}
 					catch (Exception e)
 					{
-						Debug.Print($"Fire job failed: {e}");
+						Debug.WriteLine($"Fire job {className} failed: {e}");
 					}
 				});
 				connection.On<bool>("WatchCallback", (isSuccess) =>
@@ -127,7 +148,7 @@ namespace Scheduler.NET.Client
 					{
 						connection.StopAsync().Wait();
 						connection.DisposeAsync().Wait();
-						throw new SchedulerException("Watch failed.");
+						throw new SchedulerNetException("Watch failed.");
 					}
 				});
 				connection.StartAsync().Wait();
@@ -142,16 +163,14 @@ namespace Scheduler.NET.Client
 					var times = Interlocked.Increment(ref _retryTimes);
 					if (times <= RetryTimes)
 					{
-						Console.WriteLine("Retry to connect scheduler.net server.");
-						RemoteSchedulerNET();
+						Debug.WriteLine("Retry to connect scheduler.net server.");
+						ConnectSchedulerNet();
 					}
 				}
 			}
 		}
 
-
-
-		private void DetectJobs()
+		private void ScanAssemblies()
 		{
 			_classNameMapTypes.Clear();
 			var jobProcessorType = typeof(IJobProcessor);
@@ -161,6 +180,10 @@ namespace Scheduler.NET.Client
 				var types = assembly.GetTypes();
 				foreach (var type in types)
 				{
+					if (string.IsNullOrWhiteSpace(type.FullName))
+					{
+						continue;
+					}
 					if (type.FullName != "Scheduler.NET.Client.SimpleJobProcessor"
 						&& type.FullName != "Scheduler.NET.Client.IJobProcessor"
 						&& jobProcessorType.IsAssignableFrom(type))

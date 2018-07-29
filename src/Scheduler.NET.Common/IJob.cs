@@ -1,6 +1,4 @@
-﻿using System;
-
-namespace Scheduler.NET.Common
+﻿namespace Scheduler.NET.Common
 {
 	/// <summary>
 	/// 任务接口

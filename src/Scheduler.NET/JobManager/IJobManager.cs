@@ -1,9 +1,8 @@
-﻿using Scheduler.NET.JobManager.Job;
-using Scheduler.NET.Common;
+﻿using Scheduler.NET.Common;
 
 namespace Scheduler.NET.JobManager
 {
-	public interface IJobManager<in T> where T : Common.Job
+	public interface IJobManager<in T> where T : IJob
 	{
 		string Create(T job);
 
@@ -11,6 +10,6 @@ namespace Scheduler.NET.JobManager
 
 		void Delete(string id);
 
-		void Trigger(string id);
+		void Fire(string id);
 	}
 }
