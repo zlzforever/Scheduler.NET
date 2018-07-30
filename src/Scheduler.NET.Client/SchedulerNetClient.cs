@@ -12,7 +12,21 @@ using System.Threading.Tasks;
 
 namespace Scheduler.NET.Client
 {
-	public class SchedulerNetClient
+	/// <summary>
+	/// Scheduler.NET 客户端
+	/// </summary>
+	public interface ISchedulerNetClient
+	{
+		/// <summary>
+		/// 初始化并启动
+		/// </summary>
+		void Init();
+	}
+
+	/// <summary>
+	/// Scheduler.NET 客户端
+	/// </summary>
+	public class SchedulerNetClient : ISchedulerNetClient
 	{
 		private readonly Dictionary<string, Type> _classNameMapTypes = new Dictionary<string, Type>();
 		private readonly ConcurrentDictionary<string, object> _runningJobs = new ConcurrentDictionary<string, object>();
@@ -48,9 +62,9 @@ namespace Scheduler.NET.Client
 		/// <summary>
 		/// 构造方法
 		/// </summary>
-		/// <param name="group">任务分组</param>
-		/// <param name="service">Scheduler.NET 服务地址</param>
-		public SchedulerNetClient(string group, string service) : this()
+		/// <param name="service">任务分组</param>
+		/// <param name="group">Scheduler.NET 服务地址</param>
+		public SchedulerNetClient(string service, string group) : this()
 		{
 			Group = group;
 			Service = new Uri(service).ToString();
@@ -79,78 +93,9 @@ namespace Scheduler.NET.Client
 				var connection = new HubConnectionBuilder()
 										.WithUrl($"{Service}client/?group={Group}")
 										.Build();
-				connection.Closed += e =>
-				{
-					if (e == null || ((WebSocketException)e).WebSocketErrorCode == WebSocketError.ConnectionClosedPrematurely)
-					{
-						ConnectSchedulerNet();
-					}
-					return Task.CompletedTask;
-				};
-				connection.On<JobContext, string>("Fire", (context, batchId) =>
-				{
-					var className = context?.ClassName;
-					try
-					{
-						bool shouldFire = false;
-						if (string.IsNullOrWhiteSpace(className) || !_classNameMapTypes.ContainsKey(className) || (BypassRunning && _runningJobs.ContainsKey(className)))
-						{
-							return;
-						}
-						if ((context.FireTime - DateTime.Now).TotalSeconds <= 10)
-						{
-							shouldFire = true;
-						}
-						else
-						{
-							Debug.WriteLine($"Fire job timeout: {className}.");
-						}
-						if (shouldFire)
-						{
-							connection.SendAsync("FireCallback", batchId, context.Id, JobStatus.Running).Wait();
-
-							var jobType = _classNameMapTypes[className];
-							_runningJobs.TryAdd(className, null);
-							Task.Factory.StartNew(() =>
-							{
-								bool success = false;
-								try
-								{
-									var jobObject = (IJobProcessor)Activator.CreateInstance(jobType);
-									success = jobObject.Process(context);
-								}
-								catch
-								{
-									// TODO: LOG
-								}
-								finally
-								{
-									connection.SendAsync("Complete", batchId, context.Id, success).Wait();
-								}
-							}).ContinueWith((t) =>
-							{
-								_runningJobs.TryRemove(className, out _);
-							});
-						}
-						else
-						{
-							connection.SendAsync("FireCallback", batchId, context.Id, JobStatus.Bypass).Wait();
-						}
-					}
-					catch (Exception e)
-					{
-						Debug.WriteLine($"Fire job {className} failed: {e}");
-					}
-				});
-				connection.On<bool>("WatchCallback", (isSuccess) =>
-				{
-					if (!isSuccess)
-					{
-						connection.StopAsync().Wait();
-						connection.DisposeAsync().Wait();
-						throw new SchedulerNetException("Watch failed.");
-					}
-				});
+				OnClose(connection);
+				OnFire(connection);
+				OnWatchCallback(connection);
 				connection.StartAsync().Wait();
 				connection.SendAsync("Watch", _classNameMapTypes.Keys.ToArray()).Wait();
 			}
@@ -168,6 +113,90 @@ namespace Scheduler.NET.Client
 					}
 				}
 			}
+		}
+
+		private void OnWatchCallback(HubConnection connection)
+		{
+			connection.On<bool>("WatchCallback", (isSuccess) =>
+			{
+				if (!isSuccess)
+				{
+					connection.StopAsync().Wait();
+					connection.DisposeAsync().Wait();
+					throw new SchedulerNetException("Watch failed.");
+				}
+			});
+		}
+
+		private void OnClose(HubConnection connection)
+		{
+			connection.Closed += e =>
+			{
+				if (e == null || ((WebSocketException)e).WebSocketErrorCode == WebSocketError.ConnectionClosedPrematurely)
+				{
+					ConnectSchedulerNet();
+				}
+				return Task.CompletedTask;
+			};
+		}
+
+		private void OnFire(HubConnection connection)
+		{
+			connection.On<JobContext, string>("Fire", (context, batchId) =>
+			{
+				var className = context?.Name;
+				try
+				{
+					bool shouldFire = false;
+					if (string.IsNullOrWhiteSpace(className) || !_classNameMapTypes.ContainsKey(className) || (BypassRunning && _runningJobs.ContainsKey(className)))
+					{
+						return;
+					}
+					if ((context.FireTime - DateTime.Now).TotalSeconds <= 10)
+					{
+						shouldFire = true;
+					}
+					else
+					{
+						Debug.WriteLine($"Fire job timeout: {className}.");
+					}
+					if (shouldFire)
+					{
+						connection.SendAsync("FireCallback", batchId, context.Id, JobStatus.Running).Wait();
+
+						var jobType = _classNameMapTypes[className];
+						_runningJobs.TryAdd(className, null);
+						Task.Factory.StartNew(() =>
+						{
+							bool success = false;
+							try
+							{
+								var jobObject = (IJobProcessor)Activator.CreateInstance(jobType);
+								success = jobObject.Process(context);
+							}
+							catch
+							{
+								// TODO: LOG
+							}
+							finally
+							{
+								connection.SendAsync("Complete", batchId, context.Id, success).Wait();
+							}
+						}).ContinueWith((t) =>
+						{
+							_runningJobs.TryRemove(className, out _);
+						});
+					}
+					else
+					{
+						connection.SendAsync("FireCallback", batchId, context.Id, JobStatus.Bypass).Wait();
+					}
+				}
+				catch (Exception e)
+				{
+					Debug.WriteLine($"Fire job {className} failed: {e}");
+				}
+			});
 		}
 
 		private void ScanAssemblies()

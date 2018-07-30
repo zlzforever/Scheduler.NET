@@ -1,15 +1,17 @@
 ﻿using System;
+using System.Runtime.CompilerServices;
 
+[assembly: InternalsVisibleTo("Scheduler.NET")]
 namespace Scheduler.NET.Common
 {
-	public static class JobExtensions
+	internal static class JobExtensions
 	{
 		public static JobContext ToContext(this IJob job)
 		{
 			return new JobContext
 			{
 				Id = job.Id,
-				ClassName = job.ClassName,
+				Name = job.Name,
 				Content = job.Content,
 				Cron = job.Cron,
 				FireTime = DateTime.Now,

@@ -8,6 +8,8 @@ using System.Data;
 using System.Data.SqlClient;
 using MySql.Data.MySqlClient;
 using Dapper;
+using Microsoft.Extensions.Logging;
+using Newtonsoft.Json;
 
 namespace Scheduler.NET
 {
@@ -15,70 +17,98 @@ namespace Scheduler.NET
 	{
 		private readonly ISchedulerOptions _options;
 		private readonly string GroupName = "Group";
+		private readonly ILogger _logger;
 
 		public HttpRequest Request => Context.GetHttpContext().Request;
 
-		public ClientHub(ISchedulerOptions options)
+		public ClientHub(ISchedulerOptions options, ILoggerFactory loggerFactory)
 		{
 			_options = options;
+			_logger = loggerFactory.CreateLogger<ClientHub>();
 		}
 
 		public override Task OnConnectedAsync()
 		{
-			var isValid = IsAuth() && Request.Query.ContainsKey(GroupName);
-			if (!isValid)
+			var remoteIp = Context.GetHttpContext().Connection.RemoteIpAddress.ToString();
+			_logger.LogInformation($"[{remoteIp}, {Context.ConnectionId}] connected.");
+			if (!(IsAuth() && Request.Query.ContainsKey(GroupName)))
 			{
+				_logger.LogInformation($"[{remoteIp}, {Context.ConnectionId}] auth denied.");
 				Context.Abort();
-				return null;
+				return Task.CompletedTask;
 			}
 			return base.OnConnectedAsync();
 		}
 
-		public override Task OnDisconnectedAsync(Exception exception)
+		public override async Task OnDisconnectedAsync(Exception exception)
 		{
-			if (ClientCache.ConnectionMapClassNames.ContainsKey(Context.ConnectionId))
+			var remoteIp = Context.GetHttpContext().Connection.RemoteIpAddress.ToString();
+			_logger.LogInformation($"[{remoteIp}, {Context.ConnectionId}] disconnected.");
+			var connectionId = Context.ConnectionId;
+			// TODO: 不使用 lock 以优化性能
+			lock (Cache.CacheLocker)
 			{
-				ClientCache.ConnectionMapClassNames.TryRemove(Context.ConnectionId, out _);
+				if (Cache.ConnectionIdMapClassNames.ContainsKey(connectionId))
+				{
+					Cache.ConnectionIdMapClassNames.Remove(connectionId);
+				}
+
+				foreach (var kv in Cache.GroupMapConnections)
+				{
+					kv.Value.Remove(connectionId);
+				}
 			}
-			return base.OnDisconnectedAsync(exception);
+			await base.OnDisconnectedAsync(exception);
 		}
 
 		public async Task Watch(string[] classNames)
 		{
-			bool cacheClassNames = false;
-			if (!ClientCache.ConnectionMapClassNames.ContainsKey(Context.ConnectionId))
+			var remoteIp = Context.GetHttpContext().Connection.RemoteIpAddress.ToString();
+			try
 			{
-				cacheClassNames = ClientCache.ConnectionMapClassNames.TryAdd(Context.ConnectionId, new HashSet<string>(classNames));
-			}
-			else
-			{
-				if (ClientCache.ConnectionMapClassNames.TryGetValue(Context.ConnectionId, out var oldValue))
+				if (classNames == null || classNames.Length == 0)
 				{
-					cacheClassNames = ClientCache.ConnectionMapClassNames.TryUpdate(Context.ConnectionId, new HashSet<string>(classNames), oldValue);
+					_logger.LogWarning($"[{remoteIp}, {Context.ConnectionId}] watched {JsonConvert.SerializeObject(classNames)}.");
+					await Clients.Caller.SendAsync("WatchCallback", false);
+					return;
 				}
+
+				lock (Cache.CacheLocker)
+				{
+					if (!Cache.ConnectionIdMapClassNames.ContainsKey(Context.ConnectionId))
+					{
+						Cache.ConnectionIdMapClassNames.Add(Context.ConnectionId, new HashSet<string>(classNames));
+					}
+					else
+					{
+						Cache.ConnectionIdMapClassNames[Context.ConnectionId] = new HashSet<string>(classNames);
+					}
+
+					var group = Request.Query[GroupName];
+
+					if (!Cache.GroupMapConnections.ContainsKey(group))
+					{
+						Cache.GroupMapConnections.Add(group, new HashSet<string> { Context.ConnectionId });
+					}
+					else
+					{
+						Cache.GroupMapConnections[group].Add(Context.ConnectionId);
+					}
+				}
+				_logger.LogInformation($"[{remoteIp}, {Context.ConnectionId}] watched {JsonConvert.SerializeObject(classNames)} success.");
+				await Clients.Caller.SendAsync("WatchCallback", true);
 			}
-			bool cacheGroup = false;
-			var group = Request.Query[GroupName];
-			HashSet<string> connections;
-			if (!ClientCache.GroupMapConnections.ContainsKey(group))
+			catch (Exception e)
 			{
-				connections = new HashSet<string>();
-				ClientCache.GroupMapConnections.TryAdd(group, connections);
+				_logger.LogError($"[{remoteIp}, {Context.ConnectionId}] watched {JsonConvert.SerializeObject(classNames)} failed: {e}.");
+				await Clients.Caller.SendAsync("WatchCallback", false);
 			}
-			else
-			{
-				ClientCache.GroupMapConnections.TryGetValue(group, out connections);
-			}
-			if (connections != null)
-			{
-				connections.Add(Context.ConnectionId);
-				cacheGroup = true;
-			}
-			await Clients.Caller.SendAsync("WatchCallback", cacheClassNames && cacheGroup);
 		}
 
 		public async Task FireCallback(string batchId, string jobId, JobStatus status)
 		{
+			var remoteIp = Context.GetHttpContext().Connection.RemoteIpAddress.ToString();
+			_logger.LogInformation($"[{remoteIp}, {Context.ConnectionId}] fire job {jobId}, batch {batchId} {status}.");
 			using (var conn = CreateConnection())
 			{
 				await conn.ExecuteAsync($"UPDATE scheduler_job_history SET status = {(int)status}, lastmodificationtime={GetTimeSql()} WHERE batchid=@BatchId AND jobid=@JobId", new
@@ -91,6 +121,8 @@ namespace Scheduler.NET
 
 		public async Task Complete(string batchId, string jobId, bool success)
 		{
+			var remoteIp = Context.GetHttpContext().Connection.RemoteIpAddress.ToString();
+			_logger.LogInformation($"[{remoteIp}, {Context.ConnectionId}] complete job {jobId}, batch {batchId} {(success ? "success" : "failed")}.");
 			using (var conn = CreateConnection())
 			{
 				if (success)

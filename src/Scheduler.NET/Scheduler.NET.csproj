@@ -11,7 +11,7 @@
     <PackageProjectUrl>https://github.com/zlzforever/Scheduler.NET</PackageProjectUrl>
     <RepositoryUrl>https://github.com/zlzforever/Scheduler.NET</RepositoryUrl>
     <PackageTags>Scheduler;Scheduler.NET;</PackageTags>
-    <Version>1.0.3</Version>
+    <Version>1.0.4</Version>
   </PropertyGroup>
 
   <ItemGroup>

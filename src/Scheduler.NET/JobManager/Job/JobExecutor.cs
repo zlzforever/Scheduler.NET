@@ -21,7 +21,7 @@ namespace Scheduler.NET.JobManager.Job
 			_options = options;
 		}
 
-		protected string GetTimeSql()
+		private string GetTimeSql()
 		{
 			switch (_options.HangfireStorageType.ToLower())
 			{
@@ -40,7 +40,7 @@ namespace Scheduler.NET.JobManager.Job
 			}
 		}
 
-		protected virtual IDbConnection CreateConnection()
+		private IDbConnection CreateConnection()
 		{
 			switch (_options.HangfireStorageType.ToLower())
 			{
@@ -62,7 +62,6 @@ namespace Scheduler.NET.JobManager.Job
 		public override void Execute(Common.Job job)
 		{
 			var batchId = Guid.NewGuid().ToString("N");
-			Logger.LogInformation($"Execute job {JsonConvert.SerializeObject(job)}, batch {batchId}.");
 			using (var conn = CreateConnection())
 			{
 				conn.Execute($"INSERT INTO scheduler_job_history (batchid, jobid, status,creationtime,lastmodificationtime) values (@BatchId,@JobId,@Status,{GetTimeSql()},{GetTimeSql()})",
@@ -73,7 +72,7 @@ namespace Scheduler.NET.JobManager.Job
 						Status = 0
 					});
 			}
-			_hubContext.Fire(job, batchId);
+			_hubContext.Fire(Logger, job, batchId);
 		}
 	}
 

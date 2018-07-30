@@ -114,7 +114,7 @@ namespace Scheduler.NET
 								conn.Execute(@"CREATE TABLE scheduler_job (
   id varchar(32) NOT NULL,
   [group] varchar(255) NOT NULL,
-  classname  varchar(255) NOT NULL,
+  name  varchar(255) NOT NULL,
   cron  varchar(50) NOT NULL,
   content  varchar(500) DEFAULT NULL,
   isEnable bit,
@@ -154,7 +154,7 @@ namespace Scheduler.NET
 							conn.Execute(@"CREATE TABLE IF NOT EXISTS scheduler_job (
   id varchar(32) NOT NULL,
   `group` varchar(255) NOT NULL,
-  classname  varchar(255) NOT NULL,
+  name  varchar(255) NOT NULL,
   cron  varchar(50) NOT NULL,
   content  varchar(500) DEFAULT NULL,
   creationtime timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP,

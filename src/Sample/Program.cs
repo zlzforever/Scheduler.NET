@@ -9,10 +9,9 @@ namespace Sample
 	{
 		static void Main(string[] args)
 		{
-			SchedulerNetHelper api = new SchedulerNetHelper("http://localhost:5001");
-			api.CreateJob(new Job { ClassName = typeof(ConsoleJobProcessor).FullName, Cron = "*/1 * * * *", Group = "Test", Content = "aaa" });
-			api.CreateCallbackJob(new CallbackJob { ClassName = "", Content = "", Cron = "*/1 * * * *", Group = "group1", Method = HttpMethod.Get, Url = "http://www.baidu.com" });
-			SchedulerNetClient client = new SchedulerNetClient("Test", "http://localhost:5001");
+			SchedulerNetHelper api = new SchedulerNetHelper("http://192.168.10.146:5001");
+			api.CreateJob(new Job { Name = typeof(ConsoleJobProcessor).FullName, Cron = "*/1 * * * *", Group = "Test", Content = "aaa" });
+			SchedulerNetClient client = new SchedulerNetClient("http://192.168.10.146:5001", "Test");
 			client.Init();
 			Console.Read();
 		}

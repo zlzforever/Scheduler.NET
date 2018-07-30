@@ -18,7 +18,7 @@
 		/// <summary>
 		/// 任务完整的类名
 		/// </summary>
-		string ClassName { get; set; }
+		string Name { get; set; }
 
 		/// <summary>
 		/// 定时表达式

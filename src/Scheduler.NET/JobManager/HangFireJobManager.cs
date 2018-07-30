@@ -50,56 +50,22 @@ namespace Scheduler.NET.JobManager
 			}
 		}
 
-		protected string GetTimeSql()
-		{
-			switch (_options.HangfireStorageType.ToLower())
-			{
-				case "sqlserver":
-					{
-						return "GETDATE()";
-					}
-				case "mysql":
-					{
-						return "CURRENT_TIMESTAMP()";
-					}
-				default:
-					{
-						return null;
-					}
-			}
-		}
-
-		protected string GetGroupSql()
-		{
-			switch (_options.HangfireStorageType.ToLower())
-			{
-				case "sqlserver":
-					{
-						return "[group]";
-					}
-				case "mysql":
-					{
-						return "`group`";
-					}
-				default:
-					{
-						return null;
-					}
-			}
-		}
-
+		/// <summary>
+		/// 创建任务
+		/// </summary>
+		/// <param name="job">任务</param>
 		public string Create(TJob job)
 		{
 			if (job == null)
 			{
 				throw new ArgumentNullException($"{nameof(job)}");
 			}
-			_logger.LogInformation($"Create {job}.");
 			job.Id = string.IsNullOrWhiteSpace(job.Id) ? Guid.NewGuid().ToString("N") : job.Id;
+			_logger.LogInformation($"Create {job}.");
 			using (var conn = CreateConnection())
 			{
 				conn?.Execute(
-					$"INSERT INTO scheduler_job(id,{GetGroupSql()},classname,cron,content,creationtime,lastmodificationtime) values (@Id,@Group,@ClassName,@Cron,@Content,{GetTimeSql()},{GetTimeSql()})",
+					$"INSERT INTO scheduler_job(id,{GetGroupSql()},name,cron,content,creationtime,lastmodificationtime) values (@Id,@Group,@Name,@Cron,@Content,{GetTimeSql()},{GetTimeSql()})",
 					job);
 			}
 
@@ -108,6 +74,10 @@ namespace Scheduler.NET.JobManager
 			return job.Id;
 		}
 
+		/// <summary>
+		/// 更新任务
+		/// </summary>
+		/// <param name="job">任务</param>
 		public void Update(TJob job)
 		{
 			if (job == null)
@@ -122,7 +92,7 @@ namespace Scheduler.NET.JobManager
 			using (var conn = CreateConnection())
 			{
 				conn?.Execute(
-					$"UPDATE job SET {GetGroupSql()}=@Group, classname=@ClassName, cron=@Cron, content=@Content, lastmodificationtime={GetTimeSql()} WHERE id=@Id",
+					$"UPDATE job SET {GetGroupSql()}=@Group, name=@Name, cron=@Cron, content=@Content, lastmodificationtime={GetTimeSql()} WHERE id=@Id",
 					job);
 			}
 			RecurringJob.AddOrUpdate<TJobExecutor>(job.Id, x => x.Execute(job), job.Cron, TimeZoneInfo.Local);
@@ -137,7 +107,7 @@ namespace Scheduler.NET.JobManager
 			{
 				throw new ArgumentNullException($"{nameof(id)}");
 			}
-			_logger.LogInformation($"Remove {id}.");
+			_logger.LogInformation($"Delete {id}.");
 			using (var conn = CreateConnection())
 			{
 				conn?.Execute(
@@ -159,5 +129,44 @@ namespace Scheduler.NET.JobManager
 			_logger.LogInformation($"Trigger {id}.");
 			RecurringJob.Trigger(id);
 		}
+
+		private string GetTimeSql()
+		{
+			switch (_options.HangfireStorageType.ToLower())
+			{
+				case "sqlserver":
+					{
+						return "GETDATE()";
+					}
+				case "mysql":
+					{
+						return "CURRENT_TIMESTAMP()";
+					}
+				default:
+					{
+						return null;
+					}
+			}
+		}
+
+		private string GetGroupSql()
+		{
+			switch (_options.HangfireStorageType.ToLower())
+			{
+				case "sqlserver":
+					{
+						return "[group]";
+					}
+				case "mysql":
+					{
+						return "`group`";
+					}
+				default:
+					{
+						return null;
+					}
+			}
+		}
+
 	}
 }

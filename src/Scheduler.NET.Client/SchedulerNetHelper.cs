@@ -6,6 +6,9 @@ using Scheduler.NET.Common;
 
 namespace Scheduler.NET.Client
 {
+	/// <summary>
+	/// Scheduler.NET Api
+	/// </summary>
 	public class SchedulerNetHelper
 	{
 		private static readonly HttpClient HttpClient = new HttpClient();
@@ -13,49 +16,93 @@ namespace Scheduler.NET.Client
 		private readonly string _version;
 		private readonly string _token;
 
+		/// <summary>
+		/// Scheduler.NET 服务鉴权的 Header 名称
+		/// </summary>
 		public string TokenHeader { get; set; } = "SchedulerNET";
 
-		public SchedulerNetHelper(string host, string token = null, string version = "v1.0")
+		/// <summary>
+		/// 构造方法
+		/// </summary>
+		/// <param name="service">Scheduler.NET 服务地址</param>
+		/// <param name="token">访问的 Token</param>
+		/// <param name="version">Api 版本</param>
+		public SchedulerNetHelper(string service, string token = null, string version = "v1.0")
 		{
-			_host = new Uri(host).ToString();
+			_host = new Uri(service).ToString();
 			_version = version;
 			_token = token;
 		}
 
+		/// <summary>
+		/// 创建普通任务
+		/// </summary>
+		/// <param name="job">任务信息</param>
+		/// <returns>任务编号</returns>
 		public string CreateJob(Job job)
 		{
 			return Create("job", job);
 		}
 
+		/// <summary>
+		/// 创建回调任务
+		/// </summary>
+		/// <param name="job">回调任务信息</param>
+		/// <returns>任务编号</returns>
 		public string CreateCallbackJob(CallbackJob job)
 		{
 			return Create("callbackjob", job);
 		}
 
+		/// <summary>
+		/// 更新普通任务
+		/// </summary>
+		/// <param name="job">任务</param>
 		public void UpdateJob(Job job)
 		{
 			Update("job", job);
 		}
 
+		/// <summary>
+		/// 更新回调任务
+		/// </summary>
+		/// <param name="job">任务</param>
 		public void UpdateCallbackJob(CallbackJob job)
 		{
 			Update("callbackjob", job);
 		}
 
-		public void Delete(string jobType, string id)
+		/// <summary>
+		/// 删除普通任务
+		/// </summary>
+		/// <param name="id">任务编号</param>
+		public void DeleteJob(string id)
 		{
-			var url = $"{_host}api/{_version}/{jobType}/{id}";
-			var msg = new HttpRequestMessage(HttpMethod.Delete, url);
-			AddTokenHeader(msg);
-			var response = HttpClient.SendAsync(msg).Result;
-			CheckResult(response);
+			Delete("job", id);
 		}
 
+		/// <summary>
+		/// 删除回调任务
+		/// </summary>
+		/// <param name="id">任务编号</param>
+		public void DeleteCallbackJob(string id)
+		{
+			Delete("callbackjob", id);
+		}
+
+		/// <summary>
+		/// 触发普通任务
+		/// </summary>
+		/// <param name="id">任务编号</param>
 		public void FireJob(string id)
 		{
 			Fire("job", id);
 		}
 
+		/// <summary>
+		/// 触发回调任务
+		/// </summary>
+		/// <param name="id">任务编号</param>
 		public void FireCallbackJob(string id)
 		{
 			Fire("callbackjob", id);
@@ -72,10 +119,10 @@ namespace Scheduler.NET.Client
 			return CheckResult(response);
 		}
 
-		private void Fire(string jobType, string id)
+		private void Delete(string jobType, string id)
 		{
 			var url = $"{_host}api/{_version}/{jobType}/{id}";
-			var msg = new HttpRequestMessage(HttpMethod.Get, url);
+			var msg = new HttpRequestMessage(HttpMethod.Delete, url);
 			AddTokenHeader(msg);
 			var response = HttpClient.SendAsync(msg).Result;
 			CheckResult(response);
@@ -88,6 +135,15 @@ namespace Scheduler.NET.Client
 			{
 				Content = new StringContent(JsonConvert.SerializeObject(job), Encoding.UTF8, "application/json")
 			};
+			AddTokenHeader(msg);
+			var response = HttpClient.SendAsync(msg).Result;
+			CheckResult(response);
+		}
+
+		private void Fire(string jobType, string id)
+		{
+			var url = $"{_host}api/{_version}/{jobType}/{id}";
+			var msg = new HttpRequestMessage(HttpMethod.Get, url);
 			AddTokenHeader(msg);
 			var response = HttpClient.SendAsync(msg).Result;
 			CheckResult(response);
