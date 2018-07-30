@@ -11,7 +11,8 @@
     <PackageProjectUrl>https://github.com/zlzforever/Scheduler.NET</PackageProjectUrl>
     <RepositoryUrl>https://github.com/zlzforever/Scheduler.NET</RepositoryUrl>
     <PackageTags>Scheduler;Scheduler.NET;</PackageTags>
-    <Version>1.0.4</Version>
+    <Version>1.0.5</Version>
+    <Description>Scheduler.NET is a distributed scheduler system. It support http call back job and client managed job</Description>
   </PropertyGroup>
 
   <ItemGroup>
@@ -21,7 +22,6 @@
   </ItemGroup>
 
   <ItemGroup>
-    <PackageReference Include="Confluent.Kafka" Version="0.11.5" />
     <PackageReference Include="Hang.TaskScheduler" Version="2.1.0" />
     <PackageReference Include="HangFire" Version="1.6.19" />
     <PackageReference Include="Hangfire.AspNetCore" Version="1.6.19" />
@@ -33,7 +33,6 @@
     <PackageReference Include="Microsoft.Extensions.Http" Version="2.1.0" />
     <PackageReference Include="Microsoft.Extensions.Logging.Console" Version="2.1.0" />
     <PackageReference Include="Microsoft.Extensions.Logging.Debug" Version="2.1.0" />
-    <PackageReference Include="Polly" Version="6.1.0" />
   </ItemGroup>
 
   <ItemGroup>

@@ -11,7 +11,8 @@
     <PackageProjectUrl>https://github.com/zlzforever/Scheduler.NET</PackageProjectUrl>
     <RepositoryUrl>https://github.com/zlzforever/Scheduler.NET</RepositoryUrl>
     <PackageTags>Scheduler;Scheduler.NET;</PackageTags>
-    <Version>1.0.4</Version>
+    <Version>1.0.5</Version>
+    <Description>Scheduler.NET is a distributed scheduler system. It support http call back job and client managed job</Description>
   </PropertyGroup>
 
   <ItemGroup>
