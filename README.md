@@ -57,3 +57,12 @@ Scheduler.NET is a distributed scheduler system. It support http call back job a
 		}
 
 4. Run the console project
+
+### CallbackJob
+
+1. Create a callbackjob:
+
+			SchedulerNetHelper api = new SchedulerNetHelper("http://localhost:5000");
+			api.CreateCallbackJob(new CallbackJob { ClassName = "job1", Content = "{}", Cron = "*/1 * * * *", Group = "group1", Method = HttpMethod.Get, Url = "http://www.baidu.com" });
+
+2. Then the scheduler.net will request http://www.baidu.com every 1 minutes.
