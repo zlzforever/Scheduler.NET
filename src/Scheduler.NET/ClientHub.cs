@@ -4,10 +4,6 @@ using System;
 using System.Collections.Generic;
 using System.Threading.Tasks;
 using Scheduler.NET.Common;
-using System.Data;
-using System.Data.SqlClient;
-using MySql.Data.MySqlClient;
-using Dapper;
 using Microsoft.Extensions.Logging;
 using Newtonsoft.Json;
 
@@ -29,7 +25,7 @@ namespace Scheduler.NET
 
 		public override Task OnConnectedAsync()
 		{
-			var remoteIp = Context.GetHttpContext().Connection.RemoteIpAddress.ToString();
+			var remoteIp = Context.GetRemoteIpAddress();
 			_logger.LogInformation($"[{remoteIp}, {Context.ConnectionId}] connected.");
 			if (!(IsAuth() && Request.Query.ContainsKey(GroupName)))
 			{
@@ -42,7 +38,7 @@ namespace Scheduler.NET
 
 		public override async Task OnDisconnectedAsync(Exception exception)
 		{
-			var remoteIp = Context.GetHttpContext().Connection.RemoteIpAddress.ToString();
+			var remoteIp = Context.GetRemoteIpAddress();
 			_logger.LogInformation($"[{remoteIp}, {Context.ConnectionId}] disconnected.");
 			var connectionId = Context.ConnectionId;
 			// TODO: 不使用 lock 以优化性能
@@ -55,7 +51,7 @@ namespace Scheduler.NET
 
 				foreach (var kv in Cache.GroupMapConnections)
 				{
-					kv.Value.Remove(connectionId);
+					kv.Value.RemoveWhere(c => c.ConnectionId == connectionId && c.ClientIp == remoteIp);
 				}
 			}
 			await base.OnDisconnectedAsync(exception);
@@ -63,7 +59,7 @@ namespace Scheduler.NET
 
 		public async Task Watch(string[] classNames)
 		{
-			var remoteIp = Context.GetHttpContext().Connection.RemoteIpAddress.ToString();
+			var remoteIp = Context.GetRemoteIpAddress();
 			try
 			{
 				if (classNames == null || classNames.Length == 0)
@@ -86,13 +82,14 @@ namespace Scheduler.NET
 
 					var group = Request.Query[GroupName];
 
+					var connectionInfo = new ConnectionInfo { ClientIp = remoteIp, ConnectionId = Context.ConnectionId };
 					if (!Cache.GroupMapConnections.ContainsKey(group))
 					{
-						Cache.GroupMapConnections.Add(group, new HashSet<string> { Context.ConnectionId });
+						Cache.GroupMapConnections.Add(group, new HashSet<ConnectionInfo> { connectionInfo });
 					}
 					else
 					{
-						Cache.GroupMapConnections[group].Add(Context.ConnectionId);
+						Cache.GroupMapConnections[group].Add(connectionInfo);
 					}
 				}
 				_logger.LogInformation($"[{remoteIp}, {Context.ConnectionId}] watched {JsonConvert.SerializeObject(classNames)} success.");
@@ -105,81 +102,12 @@ namespace Scheduler.NET
 			}
 		}
 
-		public async Task FireCallback(string batchId, string jobId, JobStatus status)
+		public Task FireCallback(string batchId, string jobId, JobStatus status)
 		{
-			var remoteIp = Context.GetHttpContext().Connection.RemoteIpAddress.ToString();
-			_logger.LogInformation($"[{remoteIp}, {Context.ConnectionId}] fire job {jobId}, batch {batchId} {status}.");
-			using (var conn = CreateConnection())
-			{
-				await conn.ExecuteAsync($"UPDATE scheduler_job_history SET status = {(int)status}, lastmodificationtime={GetTimeSql()} WHERE batchid=@BatchId AND jobid=@JobId", new
-				{
-					BatchId = batchId,
-					JobId = jobId
-				});
-			}
-		}
-
-		public async Task Complete(string batchId, string jobId, bool success)
-		{
-			var remoteIp = Context.GetHttpContext().Connection.RemoteIpAddress.ToString();
-			_logger.LogInformation($"[{remoteIp}, {Context.ConnectionId}] complete job {jobId}, batch {batchId} {(success ? "success" : "failed")}.");
-			using (var conn = CreateConnection())
-			{
-				if (success)
-				{
-					await conn.ExecuteAsync($"UPDATE scheduler_job_history SET status = {(int)JobStatus.Success}, lastmodificationtime={GetTimeSql()} WHERE batchid=@BatchId AND jobid=@JobId", new
-					{
-						BatchId = batchId,
-						JobId = jobId,
-					});
-				}
-				else
-				{
-					await conn.ExecuteAsync($"UPDATE scheduler_job_history SET status = {(int)JobStatus.Failed}, lastmodificationtime={GetTimeSql()} WHERE batchid=@BatchId AND jobid=@JobId", new
-					{
-						BatchId = batchId,
-						JobId = jobId,
-					});
-				}
-			}
-		}
-
-		private string GetTimeSql()
-		{
-			switch (_options.HangfireStorageType.ToLower())
-			{
-				case "sqlserver":
-					{
-						return "GETDATE()";
-					}
-				case "mysql":
-					{
-						return "CURRENT_TIMESTAMP()";
-					}
-				default:
-					{
-						return null;
-					}
-			}
-		}
-
-		private IDbConnection CreateConnection()
-		{
-			switch (_options.HangfireStorageType.ToLower())
-			{
-				case "sqlserver":
-					{
-						return new SqlConnection(_options.HangfireConnectionString);
-					}
-				case "mysql":
-					{
-						return new MySqlConnection(_options.HangfireConnectionString);
-					}
-				default:
-					{
-						return null;
-					}
-			}
+			var remoteIp = Context.GetRemoteIpAddress();
+			_logger.LogInformation($"[{remoteIp}, {Context.ConnectionId}] job {jobId}, batch {batchId} {status}.");
+			_options.ChangeJobHistoryStatus(batchId, jobId, remoteIp, Context.ConnectionId, status);
+			return Task.CompletedTask;
 		}
 
 		private bool IsAuth()

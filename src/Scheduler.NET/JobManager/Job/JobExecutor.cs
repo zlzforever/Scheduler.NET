@@ -3,8 +3,6 @@ using Microsoft.Extensions.Logging;
 using MySql.Data.MySqlClient;
 using Scheduler.NET.Common;
 using System;
-using System.Data;
-using System.Data.SqlClient;
 using Dapper;
 using Newtonsoft.Json;
 
@@ -21,58 +19,45 @@ namespace Scheduler.NET.JobManager.Job
 			_options = options;
 		}
 
-		private string GetTimeSql()
-		{
-			switch (_options.HangfireStorageType.ToLower())
-			{
-				case "sqlserver":
-					{
-						return "GETDATE()";
-					}
-				case "mysql":
-					{
-						return "CURRENT_TIMESTAMP()";
-					}
-				default:
-					{
-						return null;
-					}
-			}
-		}
-
-		private IDbConnection CreateConnection()
-		{
-			switch (_options.HangfireStorageType.ToLower())
-			{
-				case "sqlserver":
-					{
-						return new SqlConnection(_options.HangfireConnectionString);
-					}
-				case "mysql":
-					{
-						return new MySqlConnection(_options.HangfireConnectionString);
-					}
-				default:
-					{
-						return null;
-					}
-			}
-		}
-
 		public override void Execute(Common.Job job)
 		{
 			var batchId = Guid.NewGuid().ToString("N");
-			using (var conn = CreateConnection())
+			Logger.LogInformation($"Execute job {JsonConvert.SerializeObject(job)}, batch {batchId}.");
+			FireClients(job, batchId);
+		}
+
+		public void FireClients(Common.Job job, string batchId)
+		{
+			var jobContext = job.ToContext();
+			if (Cache.GroupMapConnections.TryGetValue(jobContext.Group, out var connectionInfos))
 			{
-				conn.Execute($"INSERT INTO scheduler_job_history (batchid, jobid, status,creationtime,lastmodificationtime) values (@BatchId,@JobId,@Status,{GetTimeSql()},{GetTimeSql()})",
-					new
+				bool fired = false;
+				foreach (var connectionInfo in connectionInfos)
+				{
+					if (Cache.ConnectionIdMapClassNames.TryGetValue(connectionInfo.ConnectionId, out var classNames))
 					{
-						BatchId = batchId,
-						JobId = job.Id,
-						Status = 0
-					});
+						if (classNames.Contains(jobContext.Name))
+						{
+							if (!fired)
+							{
+								fired = true;
+							}
+							Logger.LogInformation($"Fire job {job.Id}, batch {batchId} on clientip {connectionInfo.ClientIp}, connectionid {connectionInfo.ConnectionId}.");
+							_options.InsertJobHistory(batchId, job.Id, connectionInfo.ClientIp, connectionInfo.ConnectionId);
+							_hubContext.Clients.Client(connectionInfo.ConnectionId).SendAsync("Fire", jobContext, batchId);
+						}
+					}
+				}
+
+				if (!fired)
+				{
+					Logger.LogInformation($"No client watch job {job.Name}.");
+				}
 			}
-			_hubContext.Fire(Logger, job, batchId);
+			else
+			{
+				throw new SchedulerNetException("No client connected.");
+			}
 		}
 	}
 

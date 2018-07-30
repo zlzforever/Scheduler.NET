@@ -180,7 +180,7 @@ namespace Scheduler.NET.Client
 							}
 							finally
 							{
-								connection.SendAsync("Complete", batchId, context.Id, success).Wait();
+								connection.SendAsync("FireCallback", batchId, context.Id, success ? JobStatus.Success : JobStatus.Failed).Wait();
 							}
 						}).ContinueWith((t) =>
 						{

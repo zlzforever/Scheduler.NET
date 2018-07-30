@@ -4,6 +4,8 @@ using Newtonsoft.Json;
 using Scheduler.NET.Common;
 using System.Net;
 using System.Text;
+using System;
+using Dapper;
 
 namespace Scheduler.NET.JobManager.Job
 {
@@ -17,20 +19,25 @@ namespace Scheduler.NET.JobManager.Job
 			UseCookies = false
 		});
 
-		public CallbackJobExecutor(ILoggerFactory loggerFactory) : base(loggerFactory)
+		private readonly ISchedulerOptions _options;
+
+		public CallbackJobExecutor(ILoggerFactory loggerFactory, ISchedulerOptions options) : base(loggerFactory)
 		{
+			_options = options;
 		}
 
 		public override void Execute(CallbackJob job)
 		{
-			Logger.LogInformation($"Execute callback job {JsonConvert.SerializeObject(job)}.");
-
+			var batchId = Guid.NewGuid().ToString("N");
+			Logger.LogInformation($"Execute callback job {JsonConvert.SerializeObject(job)}, batch {batchId}.");
+			_options.InsertJobHistory(batchId, job.Id);
 			var msg = new HttpRequestMessage(job.Method, job.Url)
 			{
 				Content = new StringContent(job.Content, Encoding.UTF8, "application/json")
 			};
 			var response = Client.SendAsync(msg).Result;
 			response.EnsureSuccessStatusCode();
+			_options.ChangeJobHistoryStatus(batchId, job.Id, null, null, JobStatus.Success);
 		}
 	}
 }

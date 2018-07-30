@@ -48,7 +48,7 @@ namespace Scheduler.NET
 			builder.Services.AddSingleton<ISchedulerOptions>(schedulerOptions);
 			builder.Services.AddTransient<IJobManager<CallbackJob>, HangFireCallbackJobManager>();
 			builder.Services.AddTransient<IJobManager<Job>, HangFireJobManager>();
-			builder.Services.AddHangfire(config=> { });
+			builder.Services.AddHangfire(config => { });
 			switch (schedulerOptions.HangfireStorageType.ToLower())
 			{
 				case "sqlserver":
@@ -117,7 +117,10 @@ namespace Scheduler.NET
   name  varchar(255) NOT NULL,
   cron  varchar(50) NOT NULL,
   content  varchar(500) DEFAULT NULL,
-  isEnable bit,
+  jobtype varchar(20) NOT NULL,
+  url  varchar(500) DEFAULT NULL,
+  method  varchar(20) DEFAULT NULL,
+  isenable bit,
   status int,
   creationtime DateTime NOT NULL,
   lastmodificationtime DateTime,
@@ -133,10 +136,12 @@ namespace Scheduler.NET
 								conn.Execute(@"CREATE TABLE scheduler_job_history (
   batchid varchar(32) NOT NULL,
   jobid varchar(32) NOT NULL,
+  clientip varchar(20) NOT NULL,
+  connectionid varchar(32) NOT NULL,
   status int,
   creationtime DateTime NOT NULL,
   lastmodificationtime DateTime,
-  PRIMARY KEY(batchid,jobid)
+  PRIMARY KEY(batchid,jobid,clientip,connectionid)
 )");
 							}
 							catch (Exception e) when (e.Message.Contains("数据库中已存在名为 'scheduler_job_history' 的对象。") || e.Message.Contains(""))
@@ -157,6 +162,10 @@ namespace Scheduler.NET
   name  varchar(255) NOT NULL,
   cron  varchar(50) NOT NULL,
   content  varchar(500) DEFAULT NULL,
+  jobtype varchar(20) NOT NULL,
+  url  varchar(500) DEFAULT NULL,
+  method  varchar(20) DEFAULT NULL,
+  isenable tinyint(1),
   creationtime timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP,
   lastmodificationtime timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP,
   PRIMARY KEY(id)
@@ -165,10 +174,12 @@ namespace Scheduler.NET
 							conn.Execute(@"CREATE TABLE IF NOT EXISTS scheduler_job_history (
   batchid varchar(32) NOT NULL,
   jobid varchar(32) NOT NULL,
+  clientip varchar(20) NOT NULL,
+  connectionid varchar(32) NOT NULL,
   status int,
   creationtime timestamp NOT NULL,
   lastmodificationtime timestamp,
-  PRIMARY KEY(batchid,jobid)
+  PRIMARY KEY(batchid,jobid,clientip,connectionid)
 ) ENGINE = InnoDB DEFAULT CHARSET = utf8mb4; ");
 						}
 						break;
