@@ -51,7 +51,7 @@ namespace Scheduler.NET.JobManager
 			using (var conn = _options.CreateConnection())
 			{
 				var currentDatetimeSql = _options.GetCurrentDatetimeSql();
-				conn?.Execute(
+				conn.Execute(
 					$"INSERT INTO scheduler_job(id,{_options.GetGroupSql()},name,cron,content,jobtype,creationtime,lastmodificationtime) values (@Id,@Group,@Name,@Cron,@Content,'job',{currentDatetimeSql},{currentDatetimeSql})",
 					job);
 			}
@@ -61,7 +61,7 @@ namespace Scheduler.NET.JobManager
 		{
 			using (var conn = _options.CreateConnection())
 			{
-				conn?.Execute(
+				conn.Execute(
 					$"UPDATE job SET {_options.GetGroupSql()}=@Group,name=@Name,cron=@Cron,content=@Content,lastmodificationtime={_options.GetCurrentDatetimeSql()} WHERE id=@Id",
 					job);
 			}
@@ -98,7 +98,7 @@ namespace Scheduler.NET.JobManager
 			_logger.LogInformation($"Delete {id}.");
 			using (var conn = _options.CreateConnection())
 			{
-				conn?.Execute(
+				conn.Execute(
 					"DELETE FROM job WHERE id=@Id", new { Id = id });
 			}
 			RecurringJob.RemoveIfExists(id);
@@ -117,6 +117,5 @@ namespace Scheduler.NET.JobManager
 			_logger.LogInformation($"Trigger {id}.");
 			RecurringJob.Trigger(id);
 		}
-
 	}
 }

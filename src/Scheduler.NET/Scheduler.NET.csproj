@@ -11,7 +11,7 @@
     <PackageProjectUrl>https://github.com/zlzforever/Scheduler.NET</PackageProjectUrl>
     <RepositoryUrl>https://github.com/zlzforever/Scheduler.NET</RepositoryUrl>
     <PackageTags>Scheduler;Scheduler.NET;</PackageTags>
-    <Version>1.0.6</Version>
+    <Version>1.0.7</Version>
     <Description>Scheduler.NET is a distributed scheduler system. It support http call back job and client managed job</Description>
   </PropertyGroup>
 
@@ -25,14 +25,17 @@
     <PackageReference Include="Hang.TaskScheduler" Version="2.1.0" />
     <PackageReference Include="HangFire" Version="1.6.19" />
     <PackageReference Include="Hangfire.AspNetCore" Version="1.6.19" />
+    <PackageReference Include="Hangfire.MemoryStorage.Core" Version="1.4.0" />
     <PackageReference Include="Hangfire.MySql.Core" Version="2.1.5" />
-    <PackageReference Include="Hangfire.Redis.StackExchange" Version="1.7.2" />
+    <PackageReference Include="Hangfire.Redis.StackExchange.StrongName" Version="1.7.0" />
     <PackageReference Include="Microsoft.AspNetCore.Mvc.ViewFeatures" Version="2.1.0" />
     <PackageReference Include="Microsoft.AspNetCore.SignalR" Version="1.0.0" />
+    <PackageReference Include="Microsoft.AspNetCore.SignalR.Redis" Version="1.0.0" />
     <PackageReference Include="Microsoft.Extensions.Configuration.FileExtensions" Version="2.1.0" />
     <PackageReference Include="Microsoft.Extensions.Http" Version="2.1.0" />
     <PackageReference Include="Microsoft.Extensions.Logging.Console" Version="2.1.0" />
     <PackageReference Include="Microsoft.Extensions.Logging.Debug" Version="2.1.0" />
+    <PackageReference Include="StackExchange.Redis.StrongName" Version="1.2.6" />
   </ItemGroup>
 
   <ItemGroup>

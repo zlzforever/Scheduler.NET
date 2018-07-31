@@ -13,6 +13,9 @@ using Dapper;
 using MySql.Data.MySqlClient;
 using Hangfire.SqlServer;
 using Hangfire.Redis;
+using Microsoft.AspNetCore.Connections;
+using Microsoft.AspNetCore.SignalR;
+using Hangfire.MemoryStorage;
 
 namespace Scheduler.NET
 {
@@ -35,83 +38,98 @@ namespace Scheduler.NET
 			});
 		}
 
-		public static IMvcBuilder AddSchedulerNet(this IMvcBuilder builder, Action<ISchedulerOptions> setupAction)
+		public static IMvcBuilder AddSchedulerNet(this IMvcBuilder builder, Action<ISchedulerOptions> configOptions)
 		{
-			var schedulerOptions = new SchedulerOptions();
-			setupAction(schedulerOptions);
+			ISchedulerOptions options = new SchedulerOptions();
+			configOptions(options);
 
 			builder.Services.AddHttpClient();
-			builder.Services.AddSignalR();
+			builder.AddMvcOptions(o => o.Filters.Add<HttpGlobalExceptionFilter>());
 
-			builder.AddMvcOptions(options => options.Filters.Add<HttpGlobalExceptionFilter>());
-
-			builder.Services.AddSingleton<ISchedulerOptions>(schedulerOptions);
+			builder.Services.AddSingleton(options);
 			builder.Services.AddTransient<IJobManager<CallbackJob>, HangFireCallbackJobManager>();
 			builder.Services.AddTransient<IJobManager<Job>, HangFireJobManager>();
-			builder.Services.AddHangfire(config => { });
-			switch (schedulerOptions.HangfireStorageType.ToLower())
+
+			var signalRbuilder = builder.Services.AddSignalR();
+
+			switch (options.Cache.Type)
 			{
-				case "sqlserver":
+				case StorageType.Redis:
 					{
-						GlobalConfiguration.Configuration.UseStorage(new SqlServerStorage(schedulerOptions.HangfireConnectionString));
+						builder.Services.AddSingleton<ISchedulerNetCache, RedisSchedulerNetCache>();
+						signalRbuilder.AddRedis(options.Cache.ConnectionString);
 						break;
 					}
-				case "redis":
+				case StorageType.Memory:
 					{
-						GlobalConfiguration.Configuration.UseStorage(new RedisStorage(schedulerOptions.HangfireConnectionString));
+						builder.Services.AddSingleton<ISchedulerNetCache, MemorySchedulerNetCache>();
 						break;
 					}
-				case "mysql":
+				default:
 					{
-						builder.Services.AddHangfire(r => { });
-						GlobalConfiguration.Configuration.UseStorage(
-							new MySqlStorage(
-								schedulerOptions.HangfireConnectionString,
-								new MySqlStorageOptions
-								{
-									TransactionIsolationLevel = IsolationLevel.ReadCommitted,
-									QueuePollInterval = TimeSpan.FromSeconds(2),
-									JobExpirationCheckInterval = TimeSpan.FromHours(1),
-									CountersAggregateInterval = TimeSpan.FromMinutes(5),
-									PrepareSchemaIfNecessary = true,
-									DashboardJobListLimit = 50000,
-									TransactionTimeout = TimeSpan.FromMinutes(1),
-								}));
+						throw new NotImplementedException($"{options.Cache.Type} cache");
+					}
+			}
+
+			builder.Services.AddHangfire(config => { });
+
+			switch (options.Hangfire.StorageType)
+			{
+				case StorageType.Memory:
+					{
+						GlobalConfiguration.Configuration.UseStorage(new MemoryStorage());
+						break;
+					}
+				case StorageType.SqlServer:
+					{
+						GlobalConfiguration.Configuration.UseStorage(new SqlServerStorage(options.Hangfire.ConnectionString));
+						break;
+					}
+				case StorageType.Redis:
+					{
+						GlobalConfiguration.Configuration.UseStorage(new RedisStorage(options.Hangfire.ConnectionString));
+						break;
+					}
+				case StorageType.MySql:
+					{
+						GlobalConfiguration.Configuration.UseStorage(new MySqlStorage(options.Hangfire.ConnectionString));
 						break;
 					}
 			}
 
-			InitDatabase(schedulerOptions);
+			InitSchedulerNetDatabase(options);
 			return builder;
 		}
 
 		public static IMvcBuilder AddSchedulerNet(this IMvcBuilder builder, IConfiguration configuration)
 		{
-			var section = configuration.GetSection(SchedulerOptions.DefaultSettingKey);
+			var section = configuration.GetSection(SchedulerOptions.SectionName);
 			var schedulerOptions = section.Get<SchedulerOptions>();
 
 			return builder.AddSchedulerNet(options =>
 			{
-				options.HangfireConnectionString = schedulerOptions.HangfireConnectionString;
-				options.HangfireStorageType = schedulerOptions.HangfireStorageType;
+				options.Cache = schedulerOptions.Cache;
+				options.ConnectionString = schedulerOptions.ConnectionString;
+				options.Hangfire = schedulerOptions.Hangfire;
 				options.IgnoreCrons = schedulerOptions.IgnoreCrons;
+				options.StorageType = schedulerOptions.StorageType;
 				options.TokenHeader = schedulerOptions.TokenHeader;
 				options.Tokens = schedulerOptions.Tokens;
 				options.UseToken = schedulerOptions.UseToken;
 			});
 		}
 
-		private static void InitDatabase(ISchedulerOptions schedulerOptions)
+		private static void InitSchedulerNetDatabase(ISchedulerOptions schedulerOptions)
 		{
-			switch (schedulerOptions.HangfireStorageType.ToLower())
+			switch (schedulerOptions.StorageType)
 			{
-				case "sqlserver":
+				case StorageType.SqlServer:
 					{
-						using (var conn = new SqlConnection(schedulerOptions.HangfireConnectionString))
+						using (var conn = schedulerOptions.CreateConnection())
 						{
-							try
-							{
-								conn.Execute(@"CREATE TABLE scheduler_job (
+							conn.Execute(@"
+IF NOT EXISTS  (SELECT  * FROM dbo.SysObjects WHERE ID = object_id(N'[scheduler_job]') AND OBJECTPROPERTY(ID, 'IsTable') = 1)
+CREATE TABLE scheduler_job (
   id varchar(32) NOT NULL,
   [group] varchar(255) NOT NULL,
   name  varchar(255) NOT NULL,
@@ -125,15 +143,11 @@ namespace Scheduler.NET
   creationtime DateTime NOT NULL,
   lastmodificationtime DateTime,
   PRIMARY KEY(id)
-) ");
-							}
-							catch (Exception e) when (e.Message.Contains("数据库中已存在名为 'scheduler_job' 的对象。") || e.Message.Contains(""))
-							{
-								// IGNORE
-							}
-							try
-							{
-								conn.Execute(@"CREATE TABLE scheduler_job_history (
+)");
+
+							conn.Execute(@"
+IF NOT EXISTS  (SELECT  * FROM dbo.SysObjects WHERE ID = object_id(N'[scheduler_job_history]') AND OBJECTPROPERTY(ID, 'IsTable') = 1)
+CREATE TABLE scheduler_job_history (
   batchid varchar(32) NOT NULL,
   jobid varchar(32) NOT NULL,
   clientip varchar(20) NOT NULL,
@@ -143,20 +157,16 @@ namespace Scheduler.NET
   lastmodificationtime DateTime,
   PRIMARY KEY(batchid,jobid,clientip,connectionid)
 )");
-							}
-							catch (Exception e) when (e.Message.Contains("数据库中已存在名为 'scheduler_job_history' 的对象。") || e.Message.Contains(""))
-							{
-								// IGNORE
-							}
 						}
 
 						break;
 					}
-				case "mysql":
+				case StorageType.MySql:
 					{
-						using (var conn = new MySqlConnection(schedulerOptions.HangfireConnectionString))
+						using (var conn = schedulerOptions.CreateConnection())
 						{
-							conn.Execute(@"CREATE TABLE IF NOT EXISTS scheduler_job (
+							conn.Execute(@"
+CREATE TABLE IF NOT EXISTS scheduler_job (
   id varchar(32) NOT NULL,
   `group` varchar(255) NOT NULL,
   name  varchar(255) NOT NULL,
@@ -171,7 +181,8 @@ namespace Scheduler.NET
   PRIMARY KEY(id)
 ) ENGINE = InnoDB DEFAULT CHARSET = utf8mb4; ");
 
-							conn.Execute(@"CREATE TABLE IF NOT EXISTS scheduler_job_history (
+							conn.Execute(@"
+CREATE TABLE IF NOT EXISTS scheduler_job_history (
   batchid varchar(32) NOT NULL,
   jobid varchar(32) NOT NULL,
   clientip varchar(20) NOT NULL,

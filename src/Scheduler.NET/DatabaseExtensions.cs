@@ -1,28 +1,29 @@
 ﻿using Dapper;
 using MySql.Data.MySqlClient;
 using Scheduler.NET.Common;
+using System;
 using System.Data;
 using System.Data.SqlClient;
 
 namespace Scheduler.NET
 {
-	public static class DatabaseUtil
+	public static class DatabaseExtensions
 	{
 		public static IDbConnection CreateConnection(this ISchedulerOptions options)
 		{
-			switch (options.HangfireStorageType.ToLower())
+			switch (options.StorageType)
 			{
-				case "sqlserver":
+				case StorageType.SqlServer:
 					{
-						return new SqlConnection(options.HangfireConnectionString);
+						return new SqlConnection(options.ConnectionString);
 					}
-				case "mysql":
+				case StorageType.MySql:
 					{
-						return new MySqlConnection(options.HangfireConnectionString);
+						return new MySqlConnection(options.ConnectionString);
 					}
 				default:
 					{
-						return null;
+						throw new NotImplementedException($"{options.StorageType}");
 					}
 			}
 		}
@@ -61,38 +62,38 @@ namespace Scheduler.NET
 
 		public static string GetCurrentDatetimeSql(this ISchedulerOptions options)
 		{
-			switch (options.HangfireStorageType.ToLower())
+			switch (options.StorageType)
 			{
-				case "sqlserver":
+				case StorageType.SqlServer:
 					{
 						return "GETDATE()";
 					}
-				case "mysql":
+				case StorageType.MySql:
 					{
 						return "CURRENT_TIMESTAMP()";
 					}
 				default:
 					{
-						return null;
+						throw new NotImplementedException($"{options.StorageType}");
 					}
 			}
 		}
 
 		public static string GetGroupSql(this ISchedulerOptions options)
 		{
-			switch (options.HangfireStorageType.ToLower())
+			switch (options.StorageType)
 			{
-				case "sqlserver":
+				case StorageType.SqlServer:
 					{
 						return "[group]";
 					}
-				case "mysql":
+				case StorageType.MySql:
 					{
 						return "`group`";
 					}
 				default:
 					{
-						return null;
+						throw new NotImplementedException($"{options.StorageType}");
 					}
 			}
 		}

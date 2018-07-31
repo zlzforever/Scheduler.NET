@@ -19,7 +19,7 @@ namespace Scheduler.NET.JobManager
 			using (var conn = _options.CreateConnection())
 			{
 				var currentDatetimeSql = _options.GetCurrentDatetimeSql();
-				conn?.Execute(
+				conn.Execute(
 					$"INSERT INTO scheduler_job(id,{_options.GetGroupSql()},name,cron,content,jobtype,url,method,creationtime,lastmodificationtime) values (@Id,@Group,@Name,@Cron,@Content,'callbackjob',@Url,@Method,{currentDatetimeSql},{currentDatetimeSql})",
 					job);
 			}
@@ -29,7 +29,7 @@ namespace Scheduler.NET.JobManager
 		{
 			using (var conn = _options.CreateConnection())
 			{
-				conn?.Execute(
+				conn.Execute(
 					$"UPDATE job SET {_options.GetGroupSql()}=@Group,name=@Name,cron=@Cron,content=@Content,url=@Url,method=@Method,lastmodificationtime={_options.GetCurrentDatetimeSql()} WHERE id=@Id",
 					job);
 			}

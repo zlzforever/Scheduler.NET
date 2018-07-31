@@ -14,13 +14,15 @@ namespace Scheduler.NET
 		private readonly ISchedulerOptions _options;
 		private readonly string GroupName = "Group";
 		private readonly ILogger _logger;
+		private readonly ISchedulerNetCache _cache;
 
 		public HttpRequest Request => Context.GetHttpContext().Request;
 
-		public ClientHub(ISchedulerOptions options, ILoggerFactory loggerFactory)
+		public ClientHub(ISchedulerOptions options, ILoggerFactory loggerFactory, ISchedulerNetCache cache)
 		{
 			_options = options;
 			_logger = loggerFactory.CreateLogger<ClientHub>();
+			_cache = cache;
 		}
 
 		public override Task OnConnectedAsync()
@@ -33,6 +35,7 @@ namespace Scheduler.NET
 				Context.Abort();
 				return Task.CompletedTask;
 			}
+
 			return base.OnConnectedAsync();
 		}
 
@@ -41,19 +44,12 @@ namespace Scheduler.NET
 			var remoteIp = Context.GetRemoteIpAddress();
 			_logger.LogInformation($"[{remoteIp}, {Context.ConnectionId}] disconnected.");
 			var connectionId = Context.ConnectionId;
-			// TODO: 不使用 lock 以优化性能
-			lock (Cache.CacheLocker)
-			{
-				if (Cache.ConnectionIdMapClassNames.ContainsKey(connectionId))
-				{
-					Cache.ConnectionIdMapClassNames.Remove(connectionId);
-				}
 
-				foreach (var kv in Cache.GroupMapConnections)
-				{
-					kv.Value.RemoveWhere(c => c.ConnectionId == connectionId && c.ClientIp == remoteIp);
-				}
-			}
+			_cache.RemoveConnectionClassNames(Context.ConnectionId);
+
+			var group = Request.Query[GroupName];
+			await Groups.RemoveFromGroupAsync(Context.ConnectionId, group);
+			_cache.RemoveConnectionInfoFromGroup(group, new ConnectionInfo { ClientIp = remoteIp, ConnectionId = Context.ConnectionId });
 			await base.OnDisconnectedAsync(exception);
 		}
 
@@ -69,29 +65,13 @@ namespace Scheduler.NET
 					return;
 				}
 
-				lock (Cache.CacheLocker)
-				{
-					if (!Cache.ConnectionIdMapClassNames.ContainsKey(Context.ConnectionId))
-					{
-						Cache.ConnectionIdMapClassNames.Add(Context.ConnectionId, new HashSet<string>(classNames));
-					}
-					else
-					{
-						Cache.ConnectionIdMapClassNames[Context.ConnectionId] = new HashSet<string>(classNames);
-					}
+				_cache.SetConnectionClassNames(Context.ConnectionId, classNames);
 
-					var group = Request.Query[GroupName];
+				var group = Request.Query[GroupName];
+				_cache.AddConnectionInfoToGroup(group, new ConnectionInfo { ClientIp = remoteIp, ConnectionId = Context.ConnectionId });
 
-					var connectionInfo = new ConnectionInfo { ClientIp = remoteIp, ConnectionId = Context.ConnectionId };
-					if (!Cache.GroupMapConnections.ContainsKey(group))
-					{
-						Cache.GroupMapConnections.Add(group, new HashSet<ConnectionInfo> { connectionInfo });
-					}
-					else
-					{
-						Cache.GroupMapConnections[group].Add(connectionInfo);
-					}
-				}
+				await Groups.AddToGroupAsync(Context.ConnectionId, group);
+
 				_logger.LogInformation($"[{remoteIp}, {Context.ConnectionId}] watched {JsonConvert.SerializeObject(classNames)} success.");
 				await Clients.Caller.SendAsync("WatchCallback", true);
 			}
@@ -105,7 +85,7 @@ namespace Scheduler.NET
 		public Task FireCallback(string batchId, string jobId, JobStatus status)
 		{
 			var remoteIp = Context.GetRemoteIpAddress();
-			_logger.LogInformation($"[{remoteIp}, {Context.ConnectionId}] job {jobId}, batch {batchId} {status}.");
+			_logger.LogInformation($"[{remoteIp}, {Context.ConnectionId}] notice job '{jobId}', batch '{batchId}', status '{status.ToString().ToLower()}'.");
 			_options.ChangeJobHistoryStatus(batchId, jobId, remoteIp, Context.ConnectionId, status);
 			return Task.CompletedTask;
 		}
