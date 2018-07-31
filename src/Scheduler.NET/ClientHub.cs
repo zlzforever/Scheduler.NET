@@ -26,11 +26,11 @@ namespace Scheduler.NET
 
 		public override Task OnConnectedAsync()
 		{
-			var remoteIp = Context.GetRemoteIpAddress();
-			_logger.LogInformation($"[{remoteIp}, {Context.ConnectionId}] connected.");
+			var logWrapper = CreateLogWrapper();
+			_logger.LogInformation($"{logWrapper.Item2} connected.");
 			if (!(IsAuth() && _request.Query.ContainsKey(_groupHeaderName)))
 			{
-				_logger.LogInformation($"[{remoteIp}, {Context.ConnectionId}] auth denied.");
+				_logger.LogInformation($"{logWrapper.Item2} auth denied.");
 				Context.Abort();
 				return Task.CompletedTask;
 			}
@@ -40,8 +40,8 @@ namespace Scheduler.NET
 
 		public override async Task OnDisconnectedAsync(Exception exception)
 		{
-			var remoteIp = Context.GetRemoteIpAddress();
-			_logger.LogInformation($"[{remoteIp}, {Context.ConnectionId}] disconnected.");
+			var logWrapper = CreateLogWrapper();
+			_logger.LogInformation($"{logWrapper.Item2} disconnected.");
 			var connectionId = Context.ConnectionId;
 
 			_cache.RemoveClassNames(connectionId);
@@ -50,18 +50,18 @@ namespace Scheduler.NET
 
 			//await Groups.RemoveFromGroupAsync(Context.ConnectionId, group);
 
-			_cache.RemoveConnectionFromGroup(group, new ConnectionInfo { RemoteIp = remoteIp, Id = connectionId });
+			_cache.RemoveConnectionFromGroup(group, new ConnectionInfo { RemoteIp = logWrapper.Item1, Id = connectionId });
 			await base.OnDisconnectedAsync(exception);
 		}
 
 		public async Task Watch(string[] classNames)
 		{
-			var remoteIp = Context.GetRemoteIpAddress();
+			var logWrapper = CreateLogWrapper();
 			try
 			{
 				if (classNames == null || classNames.Length == 0)
 				{
-					_logger.LogWarning($"[{remoteIp}, {Context.ConnectionId}] watched {JsonConvert.SerializeObject(classNames)}.");
+					_logger.LogWarning($"{logWrapper.Item2} watched {JsonConvert.SerializeObject(classNames)}.");
 					await Clients.Caller.SendAsync("WatchCallback", false);
 					return;
 				}
@@ -69,26 +69,32 @@ namespace Scheduler.NET
 				_cache.SetClassNames(Context.ConnectionId, classNames);
 
 				var group = _request.Query[_groupHeaderName];
-				_cache.AddConnectionToGroup(group, new ConnectionInfo { RemoteIp = remoteIp, Id = Context.ConnectionId });
+				_cache.AddConnectionToGroup(group, new ConnectionInfo { RemoteIp = logWrapper.Item1, Id = Context.ConnectionId });
 
 				// await Groups.AddToGroupAsync(Context.ConnectionId, group);
 
-				_logger.LogInformation($"[{remoteIp}, {Context.ConnectionId}] watched {JsonConvert.SerializeObject(classNames)} success.");
+				_logger.LogInformation($"{logWrapper.Item2} watched {JsonConvert.SerializeObject(classNames)} success.");
 				await Clients.Caller.SendAsync("WatchCallback", true);
 			}
 			catch (Exception e)
 			{
-				_logger.LogError($"[{remoteIp}, {Context.ConnectionId}] watched {JsonConvert.SerializeObject(classNames)} failed: {e}.");
+				_logger.LogError($"{logWrapper.Item2} watched {JsonConvert.SerializeObject(classNames)} failed: {e}.");
 				await Clients.Caller.SendAsync("WatchCallback", false);
 			}
 		}
 
 		public Task FireCallback(string batchId, string jobId, JobStatus status)
 		{
-			var remoteIp = Context.GetRemoteIpAddress();
-			_logger.LogInformation($"[{remoteIp}, {Context.ConnectionId}] notice job '{jobId}', batch '{batchId}', status '{status.ToString().ToLower()}'.");
-			_options.ChangeJobHistoryStatus(batchId, jobId, remoteIp, Context.ConnectionId, status);
+			var logWrapper = CreateLogWrapper();
+			_logger.LogInformation($"{logWrapper.Item2} notice job '{jobId}', batch '{batchId}', status '{status.ToString().ToLower()}'.");
+			_options.ChangeJobHistoryStatus(batchId, jobId, logWrapper.Item1, Context.ConnectionId, status);
 			return Task.CompletedTask;
+		}
+
+		private Tuple<string, string> CreateLogWrapper()
+		{
+			var remoteIp = Context.GetRemoteIpAddress();
+			return new Tuple<string, string>(remoteIp, $"[{remoteIp}, {Context.ConnectionId}]");
 		}
 
 		private bool IsAuth()
