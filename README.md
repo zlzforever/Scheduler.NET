@@ -1,6 +1,6 @@
 # Scheduler.NET
 
-Scheduler.NET is a distributed scheduler system. It support http call back job and long polling job.
+Scheduler.NET is a distributed scheduler system. It support http call back job and client managed job.
 
 ### DESIGN
 
@@ -20,14 +20,21 @@ Scheduler.NET is a distributed scheduler system. It support http call back job a
 
 5. Update config file:
 
-		"SchedulerNET": {
-			"HangfireStorageType": "SqlServer",
-			"HangfireConnectionString": "Server=.\\SQLEXPRESS;Database=Scheduler.NET;Trusted_Connection=True;MultipleActiveResultSets=true;",
-			"UseToken": false,
-			"Tokens": [ "a1", "a2" ],
-			"TokenHeader": "SchedulerNET",
-			"IgnoreCrons": [ "* * * * *" ]
-		}
+			"SchedulerNet": {
+				"Hangfire": {
+					"StorageType": "SqlServer",
+					"ConnectionString": "Server=.\\SQLEXPRESS;Database=Scheduler.NET;Trusted_Connection=True;MultipleActiveResultSets=true;"
+				},
+				"StorageType": "SqlServer",
+				"ConnectionString": "Server=.\\SQLEXPRESS;Database=Scheduler.NET;Trusted_Connection=True;MultipleActiveResultSets=true;",
+				"UseToken": false,
+				"Tokens": [ "a1", "a2" ],
+				"TokenHeader": "SchedulerNET",
+				"IgnoreCrons": [ "* * * * *" ],
+				"Cache": {
+					"Type": "memory"
+					}
+				}
 
 6. Create database: Scheduler.NET in MSSQL
 7. Run the web application from port 5000
