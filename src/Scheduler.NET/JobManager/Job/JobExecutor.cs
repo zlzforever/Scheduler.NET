@@ -32,13 +32,13 @@ namespace Scheduler.NET.JobManager.Job
 		{
 			var jobContext = job.ToContext();
 
-			var connectionInfos = _cache.GetConnectionInfoFromGroup(jobContext.Group).AsList();
-			if (connectionInfos != null && connectionInfos.Count > 0)
+			var connections = _cache.GetConnectionFromGroup(jobContext.Group).AsList();
+			if (connections != null && connections.Count > 0)
 			{
 				bool fired = false;
-				foreach (var connectionInfo in connectionInfos)
+				foreach (var connection in connections)
 				{
-					var classNames = _cache.GetConnectionClassNames(connectionInfo.ConnectionId);
+					var classNames = _cache.GetClassNames(connection.Id);
 
 					if (classNames.Contains(jobContext.Name))
 					{
@@ -46,9 +46,9 @@ namespace Scheduler.NET.JobManager.Job
 						{
 							fired = true;
 						}
-						Logger.LogInformation($"[{connectionInfo.ClientIp}, {connectionInfo.ConnectionId}] trigger job '{job.Id}', batch '{batchId}', group '{job.Group}'.");
-						_options.InsertJobHistory(batchId, job.Id, connectionInfo.ClientIp, connectionInfo.ConnectionId);
-						_hubContext.Clients.Client(connectionInfo.ConnectionId).SendAsync("Fire", jobContext, batchId);
+						Logger.LogInformation($"[{connection.RemoteIp}, {connection.Id}] trigger job '{job.Id}', batch '{batchId}', group '{job.Group}'.");
+						_options.InsertJobHistory(batchId, job.Id, connection.RemoteIp, connection.Id);
+						_hubContext.Clients.Client(connection.Id).SendAsync("Fire", jobContext, batchId);
 					}
 				}
 

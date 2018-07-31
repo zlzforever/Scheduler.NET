@@ -11,12 +11,11 @@ namespace Scheduler.NET
 {
 	public class ClientHub : Hub
 	{
+		private const string _groupHeaderName = "Group";
 		private readonly ISchedulerOptions _options;
-		private readonly string GroupName = "Group";
 		private readonly ILogger _logger;
 		private readonly ISchedulerNetCache _cache;
-
-		public HttpRequest Request => Context.GetHttpContext().Request;
+		private HttpRequest _request => Context.GetHttpContext().Request;
 
 		public ClientHub(ISchedulerOptions options, ILoggerFactory loggerFactory, ISchedulerNetCache cache)
 		{
@@ -29,7 +28,7 @@ namespace Scheduler.NET
 		{
 			var remoteIp = Context.GetRemoteIpAddress();
 			_logger.LogInformation($"[{remoteIp}, {Context.ConnectionId}] connected.");
-			if (!(IsAuth() && Request.Query.ContainsKey(GroupName)))
+			if (!(IsAuth() && _request.Query.ContainsKey(_groupHeaderName)))
 			{
 				_logger.LogInformation($"[{remoteIp}, {Context.ConnectionId}] auth denied.");
 				Context.Abort();
@@ -45,11 +44,13 @@ namespace Scheduler.NET
 			_logger.LogInformation($"[{remoteIp}, {Context.ConnectionId}] disconnected.");
 			var connectionId = Context.ConnectionId;
 
-			_cache.RemoveConnectionClassNames(Context.ConnectionId);
+			_cache.RemoveClassNames(connectionId);
 
-			var group = Request.Query[GroupName];
-			await Groups.RemoveFromGroupAsync(Context.ConnectionId, group);
-			_cache.RemoveConnectionInfoFromGroup(group, new ConnectionInfo { ClientIp = remoteIp, ConnectionId = Context.ConnectionId });
+			var group = _request.Query[_groupHeaderName];
+
+			//await Groups.RemoveFromGroupAsync(Context.ConnectionId, group);
+
+			_cache.RemoveConnectionFromGroup(group, new ConnectionInfo { RemoteIp = remoteIp, Id = connectionId });
 			await base.OnDisconnectedAsync(exception);
 		}
 
@@ -65,12 +66,12 @@ namespace Scheduler.NET
 					return;
 				}
 
-				_cache.SetConnectionClassNames(Context.ConnectionId, classNames);
+				_cache.SetClassNames(Context.ConnectionId, classNames);
 
-				var group = Request.Query[GroupName];
-				_cache.AddConnectionInfoToGroup(group, new ConnectionInfo { ClientIp = remoteIp, ConnectionId = Context.ConnectionId });
+				var group = _request.Query[_groupHeaderName];
+				_cache.AddConnectionToGroup(group, new ConnectionInfo { RemoteIp = remoteIp, Id = Context.ConnectionId });
 
-				await Groups.AddToGroupAsync(Context.ConnectionId, group);
+				// await Groups.AddToGroupAsync(Context.ConnectionId, group);
 
 				_logger.LogInformation($"[{remoteIp}, {Context.ConnectionId}] watched {JsonConvert.SerializeObject(classNames)} success.");
 				await Clients.Caller.SendAsync("WatchCallback", true);
@@ -96,9 +97,9 @@ namespace Scheduler.NET
 			{
 				return true;
 			}
-			if (Request.Headers.ContainsKey(_options.TokenHeader))
+			if (_request.Headers.ContainsKey(_options.TokenHeader))
 			{
-				var token = Request.Headers[_options.TokenHeader].ToString();
+				var token = _request.Headers[_options.TokenHeader].ToString();
 				return _options.Tokens.Contains(token);
 			}
 			else

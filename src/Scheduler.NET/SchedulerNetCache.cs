@@ -1,6 +1,5 @@
 ﻿using Newtonsoft.Json;
 using StackExchange.Redis;
-using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Linq;
 using System.Runtime.CompilerServices;
@@ -9,12 +8,12 @@ namespace Scheduler.NET
 {
 	public interface ISchedulerNetCache
 	{
-		void SetConnectionClassNames(string connectionId, string[] classNames);
-		string[] GetConnectionClassNames(string connectionId);
-		void AddConnectionInfoToGroup(string group, ConnectionInfo connectionInfo);
-		IEnumerable<ConnectionInfo> GetConnectionInfoFromGroup(string group);
-		void RemoveConnectionClassNames(string connectionId);
-		void RemoveConnectionInfoFromGroup(string group, ConnectionInfo connectionInfo);
+		void SetClassNames(string connectionId, string[] classNames);
+		string[] GetClassNames(string connectionId);
+		void AddConnectionToGroup(string group, ConnectionInfo connectionInfo);
+		IEnumerable<ConnectionInfo> GetConnectionFromGroup(string group);
+		void RemoveClassNames(string connectionId);
+		void RemoveConnectionFromGroup(string group, ConnectionInfo connectionInfo);
 	}
 
 	public class MemorySchedulerNetCache : ISchedulerNetCache
@@ -23,13 +22,13 @@ namespace Scheduler.NET
 		private readonly Dictionary<string, string[]> ConnectionIdMapClassNames = new Dictionary<string, string[]>();
 
 		[MethodImpl(MethodImplOptions.Synchronized)]
-		public string[] GetConnectionClassNames(string connectionId)
+		public string[] GetClassNames(string connectionId)
 		{
 			return ConnectionIdMapClassNames.ContainsKey(connectionId) ? ConnectionIdMapClassNames[connectionId] : new string[0];
 		}
 
 		[MethodImpl(MethodImplOptions.Synchronized)]
-		public void SetConnectionClassNames(string connectionId, string[] classNames)
+		public void SetClassNames(string connectionId, string[] classNames)
 		{
 			if (ConnectionIdMapClassNames.ContainsKey(connectionId))
 			{
@@ -42,7 +41,7 @@ namespace Scheduler.NET
 		}
 
 		[MethodImpl(MethodImplOptions.Synchronized)]
-		public void AddConnectionInfoToGroup(string group, ConnectionInfo connectionInfo)
+		public void AddConnectionToGroup(string group, ConnectionInfo connectionInfo)
 		{
 			if (!GroupMapConnections.ContainsKey(group))
 			{
@@ -52,14 +51,14 @@ namespace Scheduler.NET
 		}
 
 		[MethodImpl(MethodImplOptions.Synchronized)]
-		public IEnumerable<ConnectionInfo> GetConnectionInfoFromGroup(string group)
+		public IEnumerable<ConnectionInfo> GetConnectionFromGroup(string group)
 		{
 			return GroupMapConnections.ContainsKey(group) ? GroupMapConnections[group] : Enumerable.Empty<ConnectionInfo>();
 		}
 
 
 		[MethodImpl(MethodImplOptions.Synchronized)]
-		public void RemoveConnectionInfoFromGroup(string group, ConnectionInfo connectionInfo)
+		public void RemoveConnectionFromGroup(string group, ConnectionInfo connectionInfo)
 		{
 			if (GroupMapConnections.ContainsKey(group))
 			{
@@ -68,7 +67,7 @@ namespace Scheduler.NET
 		}
 
 		[MethodImpl(MethodImplOptions.Synchronized)]
-		public void RemoveConnectionClassNames(string connectionId)
+		public void RemoveClassNames(string connectionId)
 		{
 			ConnectionIdMapClassNames.Remove(connectionId);
 		}
@@ -87,12 +86,12 @@ namespace Scheduler.NET
 			_database = _multiplexer.GetDatabase(0);
 		}
 
-		public void AddConnectionInfoToGroup(string group, ConnectionInfo connectionInfo)
+		public void AddConnectionToGroup(string group, ConnectionInfo connectionInfo)
 		{
 			_database.SetAdd(GetGroupKey(group), JsonConvert.SerializeObject(connectionInfo));
 		}
 
-		public string[] GetConnectionClassNames(string connectionId)
+		public string[] GetClassNames(string connectionId)
 		{
 			var result = new List<string>();
 			var caches = _database.SetMembers(GetClassNamesKey(connectionId));
@@ -106,7 +105,7 @@ namespace Scheduler.NET
 			return result.ToArray();
 		}
 
-		public IEnumerable<ConnectionInfo> GetConnectionInfoFromGroup(string group)
+		public IEnumerable<ConnectionInfo> GetConnectionFromGroup(string group)
 		{
 			var result = new List<ConnectionInfo>();
 			var caches = _database.SetMembers(GetGroupKey(group));
@@ -120,17 +119,17 @@ namespace Scheduler.NET
 			return result;
 		}
 
-		public void RemoveConnectionClassNames(string connectionId)
+		public void RemoveClassNames(string connectionId)
 		{
 			_database.KeyDelete(GetClassNamesKey(connectionId));
 		}
 
-		public void RemoveConnectionInfoFromGroup(string group, ConnectionInfo connectionInfo)
+		public void RemoveConnectionFromGroup(string group, ConnectionInfo connectionInfo)
 		{
 			_database.SetRemove(GetGroupKey(group), JsonConvert.SerializeObject(connectionInfo));
 		}
 
-		public void SetConnectionClassNames(string connectionId, string[] classNames)
+		public void SetClassNames(string connectionId, string[] classNames)
 		{
 			_database.SetAdd(GetClassNamesKey(connectionId), classNames.Select(c => (RedisValue)c).ToArray());
 		}
