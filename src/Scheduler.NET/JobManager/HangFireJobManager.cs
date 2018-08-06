@@ -36,7 +36,7 @@ namespace Scheduler.NET.JobManager
 		{
 			if (job == null)
 			{
-				throw new ArgumentNullException($"{nameof(job)}");
+				throw new ArgumentNullException(nameof(job));
 			}
 			job.Id = string.IsNullOrWhiteSpace(job.Id) ? Guid.NewGuid().ToString("N") : job.Id;
 			_logger.LogInformation($"Create {job}.");
@@ -75,11 +75,11 @@ namespace Scheduler.NET.JobManager
 		{
 			if (job == null)
 			{
-				throw new ArgumentNullException($"{nameof(job)}");
+				throw new ArgumentNullException(nameof(job));
 			}
 			if (string.IsNullOrWhiteSpace(job.Id))
 			{
-				throw new ArgumentNullException($"{nameof(job.Id)}");
+				throw new ArgumentNullException(nameof(job.Id));
 			}
 			_logger.LogInformation($"Update {job}.");
 			UpdateSchedulerJob(job);
@@ -93,7 +93,7 @@ namespace Scheduler.NET.JobManager
 		{
 			if (string.IsNullOrWhiteSpace(id))
 			{
-				throw new ArgumentNullException($"{nameof(id)}");
+				throw new ArgumentNullException(nameof(id));
 			}
 			_logger.LogInformation($"Delete {id}.");
 			using (var conn = _options.CreateConnection())
@@ -112,7 +112,7 @@ namespace Scheduler.NET.JobManager
 		{
 			if (string.IsNullOrWhiteSpace(id))
 			{
-				throw new ArgumentNullException($"{nameof(id)}");
+				throw new ArgumentNullException(nameof(id));
 			}
 			_logger.LogInformation($"Trigger {id}.");
 			RecurringJob.Trigger(id);

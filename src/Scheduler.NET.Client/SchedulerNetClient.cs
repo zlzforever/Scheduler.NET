@@ -88,28 +88,38 @@ namespace Scheduler.NET.Client
 
 		private void ConnectSchedulerNet()
 		{
-			try
+			var times = Interlocked.Increment(ref _retryTimes);
+			while (times <= RetryTimes)
 			{
 				var connection = new HubConnectionBuilder()
-										.WithUrl($"{Service}client/?group={Group}")
-										.Build();
-				OnClose(connection);
-				OnFire(connection);
-				OnWatchCallback(connection);
-				connection.StartAsync().Wait();
-				connection.SendAsync("Watch", _classNameMapTypes.Keys.ToArray()).Wait();
-			}
-			catch (Exception e) when (e.InnerException?.InnerException is SocketException)
-			{
-				var exception = (SocketException)e.InnerException.InnerException;
-				if (exception.SocketErrorCode == SocketError.TimedOut || exception.SocketErrorCode == SocketError.ConnectionRefused)
+											.WithUrl($"{Service}client/?group={Group}")
+											.Build();
+				try
 				{
-					Thread.Sleep(1000);
-					var times = Interlocked.Increment(ref _retryTimes);
-					if (times <= RetryTimes)
+					OnClose(connection);
+					OnFire(connection);
+					OnWatchCallback(connection);
+					connection.StartAsync().Wait();
+					connection.SendAsync("Watch", _classNameMapTypes.Keys.ToArray()).Wait();
+				}
+				catch (Exception e) when (e.InnerException?.InnerException is SocketException)
+				{
+					connection.StopAsync().Wait();
+					connection.DisposeAsync().Wait();
+					var exception = (SocketException)e.InnerException.InnerException;
+					if (exception.SocketErrorCode == SocketError.TimedOut || exception.SocketErrorCode == SocketError.ConnectionRefused)
 					{
-						Debug.WriteLine("Retry to connect scheduler.net server.");
-						ConnectSchedulerNet();
+						Thread.Sleep(1000);
+
+						if (times <= RetryTimes)
+						{
+							Debug.WriteLine("Retry to connect scheduler.net server.");
+							continue;
+						}
+						else
+						{
+							break;
+						}
 					}
 				}
 			}
@@ -227,11 +237,11 @@ namespace Scheduler.NET.Client
 		{
 			if (string.IsNullOrWhiteSpace(Group))
 			{
-				throw new ArgumentNullException($"{nameof(Group)}");
+				throw new ArgumentNullException(nameof(Group));
 			}
 			if (string.IsNullOrWhiteSpace(Service))
 			{
-				throw new ArgumentNullException($"{nameof(Service)}");
+				throw new ArgumentNullException(nameof(Service));
 			}
 		}
 	}
